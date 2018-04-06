@@ -1,2 +1,2 @@
 # DuckDuckGo
-Concolic Exection Engine for Golang
+Concolic Execution Engine for Golang

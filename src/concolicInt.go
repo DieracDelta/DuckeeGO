@@ -3,10 +3,10 @@ package concolic
 import "sym"
 import "github.com/aclements/go-z3/z3"
 
-type ConcolicBool struct {
-	Value bool
-	Sym   sym.SymBool
-}
+// type ConcolicBool struct {
+// 	Value bool
+// 	Sym   sym.SymBool
+// }
 
 // func (concBool *ConcolicBool) equals(other ConcolicBool) ConcolicBool {
 //   // strange stuff...
@@ -22,6 +22,15 @@ type ConcolicInt struct {
 	Sym   sym.SymInt
 }
 
-func (concInt *ConcolicInt) equals(other ConcolicInt) ConcolicBool {
-	return concInt.Value == other.Value
+func (self ConcolicInt) equals(o interface{}) bool {
+	// return concInt.Value == other.Value
+	switch o.(type) {
+	case int:
+		res := self.Value == int(o)
+	case ConcolicInt:
+		res := self.Value == ConcolicInt(o).Value
+	default:
+		return false
+	}
+
 }

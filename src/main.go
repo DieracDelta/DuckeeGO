@@ -11,8 +11,11 @@ import "go/parser"
 import "go/ast"
 import "go/token"
 
+// import "reflect"
+
 // argment is path to example program
 func main() {
+	fmt.Print("mr duck\r\n")
 	fset := token.NewFileSet()
 	// TODO add more files  by including more args
 	fileName := os.Args[1]
@@ -24,30 +27,60 @@ func main() {
 	}
 
 	// ast.Print(fset, parsedFile)
-	add_instrumentation(fset, parsedFile)
+	addInstrumentation(fset, parsedFile)
 
 	concolic_execute(parsedFile)
 }
 
-func add_instrumentation(fset *token.FileSet, parsedFile *ast.File) {
+// DFS it, recursively
+// TODO switch to iterative cuz recursion sux
+func addInstrumentation(fset *token.FileSet, parsedFile *ast.File) {
 	queue := parsedFile.Decls
-	for len(queue) > 0 {
-		curNode := queue[0]
-		queue = queue[1:]
+	for _, curNode := range queue {
+		instrumentNode(curNode)
+	}
+}
 
-		switch curNode := curNode.(type) {
-		case *ast.GenDecl:
-			switch curNode.Tok {
-			case token.CONST:
-			case token.TYPE:
-			case token.VAR:
-			case token.IMPORT:
+func instrumentNode(curNode interface{}) {
+	switch curNode := curNode.(type) {
+	// case *ast.GenDecl:
+	// 	switch curNode.Tok {
+	// 	case token.CONST:
+	// 	case token.TYPE:
+	// 	case token.VAR:
+	// 	case token.IMPORT:
+	// 	}
+	// 	fmt.Print(curNode)
+	case *ast.FuncDecl:
+		instrumentNode(curNode.Body)
+		// fmt.Print(curNode)
+	case *ast.BlockStmt:
+		for _, ele := range curNode.List {
+			instrumentNode(ele)
+		}
+	case *ast.DeclStmt:
+		instrumentNode(curNode.Decl)
+	case *ast.GenDecl:
+		switch curNode.Tok {
+		case token.VAR:
+			for _, ele := range curNode.Specs {
+				instrumentNode(ele)
 			}
-			fmt.Print(curNode)
-		case *ast.FuncDecl:
-			fmt.Print(curNode)
+		}
+	case *ast.ValueSpec:
+		for _, aNode := range curNode.Values {
+			instrumentNode(aNode)
+		}
+	case *ast.BinaryExpr:
+		// TODO implement pls kthxbai
+	case *ast.BasicLit:
+		if curNode.Kind == token.INT {
+			fmt.Printf("quack quack %s\r\n", curNode.Value)
 		}
 	}
+
+	// fmt.Print(curNode)
+	// fmt.Print("\r\n\r\n\r\n")
 }
 
 func concolic_execute(instrumenetedFile *ast.File) {

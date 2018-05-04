@@ -1,6 +1,6 @@
 package concolic
 
-import sym
+import "sym"
 import "github.com/aclements/go-z3/z3"
 
 type ConcolicBool struct {
@@ -19,7 +19,7 @@ func (concBool *ConcolicBool) equals(other ConcolicBool) ConcolicBool {
 
 
 type ConcolicInt struct {
-  Value   int
+  Value   int,
   Sym     sym.SymInt
 }
 
@@ -27,7 +27,3 @@ type ConcolicInt struct {
 func (concInt *ConcolicInt) equals(other ConcolicInt) ConcolicBool {
   return concInt.Value == other.Value
 }
-
-
-
-

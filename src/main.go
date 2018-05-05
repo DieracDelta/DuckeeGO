@@ -8,7 +8,7 @@ import "fmt"
 
 // import "io/ioutil"
 // for rewriting
-import "reflect"
+//import "reflect"
 import "bytes"
 import "github.com/fatih/astrewrite"
 import "go/parser"
@@ -20,7 +20,9 @@ import "go/printer"
 
 // argment is path to example program
 func main() {
-	fmt.Print("mr duck\r\n")
+	if false {
+		fmt.Print("mr duck\r\n")
+	}
 	fset := token.NewFileSet()
 	// TODO add more files  by including more args
 	filePath := os.Args[1]
@@ -52,7 +54,7 @@ func concolicExecute(instrumentedFile ast.Node) {
 // }
 
 func addInstrumentation(curNode ast.Node) (ast.Node, bool) {
-	fmt.Println(reflect.TypeOf(curNode))
+	// fmt.Println(reflect.TypeOf(curNode))
 	switch curNode.(type) {
 	case *ast.BasicLit:
 		castedNode := curNode.(*ast.BasicLit)

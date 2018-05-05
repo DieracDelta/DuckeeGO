@@ -1,0 +1,12 @@
+mr duck
+package main
+
+import "../src/concolicInt.go"
+import "../src/symInt.go"
+
+func main() {
+
+	var a = 69
+
+}
+

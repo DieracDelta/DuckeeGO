@@ -8,6 +8,7 @@ import "fmt"
 
 // import "io/ioutil"
 // for rewriting
+import "reflect"
 import "bytes"
 import "github.com/fatih/astrewrite"
 import "go/parser"
@@ -30,7 +31,7 @@ func main() {
 		panic(err)
 	}
 
-	ast.Print(fset, uninstrumentedAST)
+	// ast.Print(fset, uninstrumentedAST)
 	instrumentedAST := astrewrite.Walk(uninstrumentedAST, addInstrumentation)
 
 	// concolicExecute(instrumentedAST)
@@ -51,9 +52,30 @@ func concolicExecute(instrumentedFile ast.Node) {
 // }
 
 func addInstrumentation(curNode ast.Node) (ast.Node, bool) {
+	fmt.Println(reflect.TypeOf(curNode))
 	switch curNode.(type) {
 	case *ast.BasicLit:
-		if curNode.(*ast.BasicLit).Kind == token.INT {
+		castedNode := curNode.(*ast.BasicLit)
+		if castedNode.Kind == token.INT {
+			innardExpr :=
+				&ast.CallExpr{
+					Fun: &ast.Ident{
+						Name: "SymInt",
+					},
+					Args: []ast.Expr{castedNode},
+				}
+			arguments := []ast.Expr{
+				castedNode,
+				innardExpr,
+			}
+			bruh :=
+				ast.CallExpr{
+					Fun: &ast.Ident{
+						Name: "ConcolicInt",
+					},
+					Args:     arguments,
+					Ellipsis: token.NoPos}
+			return &bruh, true
 			// implement replacement
 		}
 		return curNode, true

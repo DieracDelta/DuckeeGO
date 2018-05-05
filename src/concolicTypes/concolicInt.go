@@ -1,4 +1,4 @@
-package concolicTypes
+package concolicint
 
 import "symInt"
 import "symBool"

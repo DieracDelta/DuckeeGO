@@ -1,4 +1,4 @@
-package symInt
+package symTypes
 
 import "github.com/aclements/go-z3/z3"
 import "reflect"

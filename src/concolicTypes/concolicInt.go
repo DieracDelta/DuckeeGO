@@ -34,3 +34,7 @@ func (self ConcolicInt) equals(o interface{}) bool {
 		return false
 	}
 }
+
+func (self ConcolicInt) add(o interface{}) ConcolicInt {
+	return nil
+}

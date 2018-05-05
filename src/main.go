@@ -15,7 +15,8 @@ import "go/parser"
 import "go/ast"
 import "go/token"
 import "go/printer"
-import "concolicTypes"
+
+// import "concolicTypes"
 
 // import "reflect"
 
@@ -60,29 +61,41 @@ func addInstrumentation(curNode ast.Node) (ast.Node, bool) {
 	case *ast.BasicLit:
 		castedNode := curNode.(*ast.BasicLit)
 		if castedNode.Kind == token.INT {
-			innardExpr :=
-				&ast.CallExpr{
-					Fun: &ast.Ident{
-						Name: "SymInt",
-					},
-					Args: []ast.Expr{castedNode},
-				}
-			arguments := []ast.Expr{
-				castedNode,
-				innardExpr,
-			}
 			bruh :=
-				ast.CallExpr{
-					Fun: &ast.Ident{
-						Name: "ConcolicInt",
+				ast.CompositeLit{
+					Type: &ast.SelectorExpr{
+						X: &ast.Ident{
+							Name: "concolicTypes",
+						},
+						Sel: &ast.Ident{
+							Name: "ConcolicInt",
+						},
 					},
-					Args:     arguments,
-					Ellipsis: token.NoPos}
+					Elts: []ast.Expr{
+						castedNode,
+						&ast.CompositeLit{
+							Type: &ast.SelectorExpr{
+								X: &ast.Ident{
+									Name: "symTypes",
+								},
+								Sel: &ast.Ident{
+									Name: "SymInt",
+								},
+							},
+							Elts: []ast.Expr{
+								castedNode,
+							},
+						},
+					},
+				}
 			return &bruh, true
 			// implement replacement
 		}
 		return curNode, true
 	case *ast.BinaryExpr:
+		// if onlyInts(curNode.(*ast.BinaryExpr)) {
+
+		// }
 		// // TODO implement pls kthxbai
 		return curNode, true
 	default:

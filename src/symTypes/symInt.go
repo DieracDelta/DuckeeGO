@@ -5,7 +5,7 @@ import "reflect"
 import "hash/fnv"
 
 type SymInt struct {
-	id int
+	id string
 }
 
 // TODO probably should be concolic bool

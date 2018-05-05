@@ -1,7 +1,6 @@
-package concolicint
+package concolicTypes
 
-import "symInt"
-import "symBool"
+import "symTypes"
 import "github.com/aclements/go-z3/z3"
 
 // type ConcolicBool struct {
@@ -23,7 +22,7 @@ type ConcolicInt struct {
 	Sym   symInt.SymInt
 }
 
-func (self ConcolicInt) equals(o interface{}) bool {
+func (self ConcolicInt) equals(o interface{}) ConcolicBool {
 	// return concInt.Value == other.Value
 	switch o.(type) {
 	case int:
@@ -31,10 +30,20 @@ func (self ConcolicInt) equals(o interface{}) bool {
 	case ConcolicInt:
 		res := self.Value == ConcolicInt(o).Value
 	default:
-		return false
+		return ConcolicBool(false)
 	}
+  return ConcolicBool{Value:res, Sym: ... }
 }
 
 func (self ConcolicInt) add(o interface{}) ConcolicInt {
-	return nil
+  switch o.(type) {
+  case int:
+    res := self.Value + int(o)
+  case ConcolicInt:
+    res := self.Value + ConcolicInt(o).Value
+  default:
+    // something went very wrong.
+    return nil
+  }
+  return ConcolicInt{Value:res, Sym:sym}
 }

@@ -1,6 +1,7 @@
-package concolic
+package concolicint
 
-import "sym"
+import "symInt"
+import "symBool"
 import "github.com/aclements/go-z3/z3"
 
 // type ConcolicBool struct {
@@ -19,7 +20,7 @@ import "github.com/aclements/go-z3/z3"
 
 type ConcolicInt struct {
 	Value int
-	Sym   sym.SymInt
+	Sym   symInt.SymInt
 }
 
 func (self ConcolicInt) equals(o interface{}) bool {

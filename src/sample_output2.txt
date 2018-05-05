@@ -1,0 +1,36 @@
+    58  .  .  .  .  List: []ast.Stmt (len = 1) {
+    59  .  .  .  .  .  0: *ast.DeclStmt {
+    60  .  .  .  .  .  .  Decl: *ast.GenDecl {
+    61  .  .  .  .  .  .  .  TokPos: /home/dieraca/school/6.858/DuckDuckGo/example/example.go:8:2
+    62  .  .  .  .  .  .  .  Tok: var
+    63  .  .  .  .  .  .  .  Lparen: -
+    64  .  .  .  .  .  .  .  Specs: []ast.Spec (len = 1) {
+    65  .  .  .  .  .  .  .  .  0: *ast.ValueSpec {
+    66  .  .  .  .  .  .  .  .  .  Names: []*ast.Ident (len = 1) {
+    67  .  .  .  .  .  .  .  .  .  .  0: *ast.Ident {
+    68  .  .  .  .  .  .  .  .  .  .  .  NamePos: /home/dieraca/school/6.858/DuckDuckGo/example/example.go:8:6
+    69  .  .  .  .  .  .  .  .  .  .  .  Name: "a"
+    70  .  .  .  .  .  .  .  .  .  .  .  Obj: *ast.Object {
+    71  .  .  .  .  .  .  .  .  .  .  .  .  Kind: var
+    72  .  .  .  .  .  .  .  .  .  .  .  .  Name: "a"
+    73  .  .  .  .  .  .  .  .  .  .  .  .  Decl: *(obj @ 65)
+    74  .  .  .  .  .  .  .  .  .  .  .  .  Data: 0
+    75  .  .  .  .  .  .  .  .  .  .  .  }
+    76  .  .  .  .  .  .  .  .  .  .  }
+    77  .  .  .  .  .  .  .  .  .  }
+    78  .  .  .  .  .  .  .  .  .  Values: []ast.Expr (len = 1) {
+    79  .  .  .  .  .  .  .  .  .  .  0: *ast.BasicLit {
+    80  .  .  .  .  .  .  .  .  .  .  .  ValuePos: /home/dieraca/school/6.858/DuckDuckGo/example/example.go:8:10
+    81  .  .  .  .  .  .  .  .  .  .  .  Kind: INT
+    82  .  .  .  .  .  .  .  .  .  .  .  Value: "69"
+    83  .  .  .  .  .  .  .  .  .  .  }
+    84  .  .  .  .  .  .  .  .  .  }
+    85  .  .  .  .  .  .  .  .  }
+    86  .  .  .  .  .  .  .  }
+    87  .  .  .  .  .  .  .  Rparen: -
+    88  .  .  .  .  .  .  }
+    89  .  .  .  .  .  }
+    90  .  .  .  .  }
+    91  .  .  .  .  Rbrace: /home/dieraca/school/6.858/DuckDuckGo/example/example.go:17:1
+    92  .  .  .  }
+    93  .  .  }

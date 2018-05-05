@@ -7,9 +7,13 @@ import "os"
 import "fmt"
 
 // import "io/ioutil"
+// for rewriting
+import "bytes"
+import "github.com/fatih/astrewrite"
 import "go/parser"
 import "go/ast"
 import "go/token"
+import "go/printer"
 
 // import "reflect"
 
@@ -18,70 +22,45 @@ func main() {
 	fmt.Print("mr duck\r\n")
 	fset := token.NewFileSet()
 	// TODO add more files  by including more args
-	fileName := os.Args[1]
+	filePath := os.Args[1]
 
-	parsedFile, err := parser.ParseFile(fset, fileName, nil, 0)
+	uninstrumentedAST, err := parser.ParseFile(fset, filePath, nil, 0)
 
 	if err != nil {
 		panic(err)
 	}
 
-	// ast.Print(fset, parsedFile)
-	addInstrumentation(fset, parsedFile)
+	ast.Print(fset, uninstrumentedAST)
+	instrumentedAST := astrewrite.Walk(uninstrumentedAST, addInstrumentation)
 
-	concolic_execute(parsedFile)
+	// concolicExecute(instrumentedAST)
+	var buf bytes.Buffer
+	printer.Fprint(&buf, fset, instrumentedAST)
+	fmt.Println(buf.String())
 }
 
-// DFS it, recursively
-// TODO switch to iterative cuz recursion sux
-func addInstrumentation(fset *token.FileSet, parsedFile *ast.File) {
-	queue := parsedFile.Decls
-	for _, curNode := range queue {
-		instrumentNode(curNode)
-	}
+func concolicExecute(instrumentedFile ast.Node) {
+
 }
 
-func instrumentNode(curNode interface{}) {
-	switch curNode := curNode.(type) {
-	// case *ast.GenDecl:
-	// 	switch curNode.Tok {
-	// 	case token.CONST:
-	// 	case token.TYPE:
-	// 	case token.VAR:
-	// 	case token.IMPORT:
-	// 	}
-	// 	fmt.Print(curNode)
-	case *ast.FuncDecl:
-		instrumentNode(curNode.Body)
-		// fmt.Print(curNode)
-	case *ast.BlockStmt:
-		for _, ele := range curNode.List {
-			instrumentNode(ele)
-		}
-	case *ast.DeclStmt:
-		instrumentNode(curNode.Decl)
-	case *ast.GenDecl:
-		switch curNode.Tok {
-		case token.VAR:
-			for _, ele := range curNode.Specs {
-				instrumentNode(ele)
-			}
-		}
-	case *ast.ValueSpec:
-		for _, aNode := range curNode.Values {
-			instrumentNode(aNode)
-		}
-	case *ast.BinaryExpr:
-		// TODO implement pls kthxbai
+// case *ast.BinaryExpr:
+// case *ast.BasicLit:
+// if curNode.Kind == token.INT {
+// 	// implement replacement
+// 	fmt.Printf("quack quack %s\r\n", curNode.Value)
+// }
+
+func addInstrumentation(curNode ast.Node) (ast.Node, bool) {
+	switch curNode.(type) {
 	case *ast.BasicLit:
-		if curNode.Kind == token.INT {
-			fmt.Printf("quack quack %s\r\n", curNode.Value)
+		if curNode.(*ast.BasicLit).Kind == token.INT {
+			// implement replacement
 		}
+		return curNode, true
+	case *ast.BinaryExpr:
+		// // TODO implement pls kthxbai
+		return curNode, true
+	default:
+		return curNode, true
 	}
-
-	// fmt.Print(curNode)
-	// fmt.Print("\r\n\r\n\r\n")
-}
-
-func concolic_execute(instrumenetedFile *ast.File) {
 }

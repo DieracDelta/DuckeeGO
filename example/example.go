@@ -1,11 +1,13 @@
 package main
 
-import "../src/concolicInt.go"
-import "../src/symInt.go"
+import "concolicTypes"
+import "symTypes"
 
 func main() {
 
 	var a = 69
+
+	// var a = concolicTypes.ConcolicInt{69, symTypes.SymInt{}}
 
 	// var w = 1 + 2 + 3
 	// var x = 2

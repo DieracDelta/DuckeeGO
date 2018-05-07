@@ -118,6 +118,21 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 
 		curNode.Replace(&replacementNode)
 		// }
+	case *ast.UnaryExpr:
+		// ! on bools is the only case I can think of
+		castedNode := curNode.Node().(*ast.UnaryExpr)
+		switch castedNode.Op {
+		case token.NOT:
+			replacemenetNode := ast.CallExpr{
+				Fun: &ast.SelectorExpr{
+					X: castedNode.X,
+					Sel: &ast.Ident{
+						Name: "Not",
+					},
+				},
+			}
+			curNode.Replace(&replacemenetNode)
+		}
 	case *ast.BasicLit:
 		castedNode := curNode.Node().(*ast.BasicLit)
 		if castedNode.Kind == token.INT {

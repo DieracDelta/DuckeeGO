@@ -8,19 +8,21 @@ import "fmt"
 
 // import "io/ioutil"
 // for rewriting
-//import "reflect"
+import "reflect"
 import "bytes"
-import "github.com/fatih/astrewrite"
 import "go/parser"
 import "go/ast"
 import "go/token"
 import "go/printer"
+import "golang.org/x/tools/go/ast/astutil"
 
 // import "concolicTypes"
 
 // import "reflect"
 
 // argment is path to example program
+var mruNames []string
+
 func main() {
 	if false {
 		fmt.Print("mr duck\r\n")
@@ -35,17 +37,13 @@ func main() {
 		panic(err)
 	}
 
-	// ast.Print(fset, uninstrumentedAST)
-	instrumentedAST := astrewrite.Walk(uninstrumentedAST, addInstrumentation)
+	ast.Print(fset, uninstrumentedAST)
+	instrumentedAST := astutil.Apply(uninstrumentedAST, astutil.ApplyFunc(addInstrumentationPre), astutil.ApplyFunc(addInstrumentationPost))
 
 	// concolicExecute(instrumentedAST)
 	var buf bytes.Buffer
 	printer.Fprint(&buf, fset, instrumentedAST)
 	fmt.Println(buf.String())
-}
-
-func concolicExecute(instrumentedFile ast.Node) {
-
 }
 
 // case *ast.BinaryExpr:
@@ -55,12 +53,20 @@ func concolicExecute(instrumentedFile ast.Node) {
 // 	fmt.Printf("quack quack %s\r\n", curNode.Value)
 // }
 
-func addInstrumentation(curNode ast.Node) (ast.Node, bool) {
-	// fmt.Println(reflect.TypeOf(curNode))
-	switch curNode.(type) {
+func addInstrumentationPre(curNode *astutil.Cursor) bool {
+	return true
+
+}
+
+func addInstrumentationPost(curNode *astutil.Cursor) bool {
+	fmt.Println(reflect.TypeOf(curNode.Node()))
+	switch curNode.Node().(type) {
 	case *ast.BasicLit:
-		castedNode := curNode.(*ast.BasicLit)
-		if castedNode.Kind == token.INT {
+		castedNode := curNode.Node().(*ast.BasicLit)
+		if castedNode.Kind == token.INT && len(mruNames) > 0 {
+			identifier := mruNames[0]
+			mruNames = mruNames[1:]
+
 			bruh :=
 				ast.CompositeLit{
 					Type: &ast.SelectorExpr{
@@ -83,22 +89,45 @@ func addInstrumentation(curNode ast.Node) (ast.Node, bool) {
 								},
 							},
 							Elts: []ast.Expr{
-								castedNode,
+								&ast.BasicLit{
+									Kind:  token.STRING,
+									Value: identifier,
+								},
 							},
 						},
 					},
 				}
-			return &bruh, true
-			// implement replacement
+			curNode.Replace(&bruh)
+			// TODO implement replacement
 		}
-		return curNode, true
+		return true
+	// case *ast.FuncType:
+	case *ast.BlockStmt:
+		mruNames = mruNames[1:]
+		return true
+
 	case *ast.BinaryExpr:
 		// if onlyInts(curNode.(*ast.BinaryExpr)) {
 
 		// }
 		// // TODO implement pls kthxbai
-		return curNode, true
+		return true
+	case *ast.Ident:
+		castedNode := curNode.Node().(*ast.Ident)
+		typeMetadata := castedNode.Obj
+		// if len(castedNode) != 1 {
+		// 	panic("oh ducking motherducker")
+		// }
+		// TODO add to this as we add more types
+		if typeMetadata != nil {
+			mruNames = append(mruNames, castedNode.Name)
+		}
+		return true
 	default:
-		return curNode, true
+		return true
 	}
+}
+
+func concolicExecute(instrumentedFile ast.Node) {
+
 }

@@ -176,7 +176,10 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 				}
 			curNode.Replace(&bruh)
 			// TODO implement replacement
+		} else if castedNode.Kind == token.STRING {
+
 		}
+
 	case *ast.AssignStmt:
 		castedNode := curNode.Node().(*ast.AssignStmt)
 		addedNode := &ast.Ident{
@@ -218,11 +221,68 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 	case *ast.BlockStmt:
 	case *ast.Ident:
 		castedNode := curNode.Node().(*ast.Ident)
-		if castedNode.Name == "int" {
+		switch castedNode.Name {
+		case "int":
 			castedNode.Name = "concolicTypes.ConcolicInt"
+		case "bool":
+			castedNode.Name = "concolicTypes.ConcolicBool"
+		case "true":
+			fallthrough
+		case "false":
+			// TODO dry this out (combine it with other else ifs/put into method)
+			identifier := getIdentifier(curNode)
+			var theElt []ast.Expr
+			if identifier == "" {
+				theElt = []ast.Expr{
+					&ast.BasicLit{
+						Kind:  token.STRING,
+						Value: "\"\"",
+					},
+					&ast.BasicLit{
+						Kind:  token.INT,
+						Value: "true",
+					},
+				}
+			} else {
+				theElt = []ast.Expr{
+					&ast.BasicLit{
+						Kind:  token.STRING,
+						Value: "\"" + identifier + "\"",
+					},
+					&ast.BasicLit{
+						Kind:  token.INT,
+						Value: "false",
+					},
+				}
 
+			}
+			bruh :=
+				ast.CompositeLit{
+					Type: &ast.SelectorExpr{
+						X: &ast.Ident{
+							Name: "concolicTypes",
+						},
+						Sel: &ast.Ident{
+							Name: "ConcolicBool",
+						},
+					},
+					Elts: []ast.Expr{
+						castedNode,
+						&ast.CompositeLit{
+							Type: &ast.SelectorExpr{
+								X: &ast.Ident{
+									Name: "symTypes",
+								},
+								Sel: &ast.Ident{
+									Name: "SymBool",
+								},
+							},
+							Elts: theElt,
+						},
+					},
+				}
+			curNode.Replace(&bruh)
 		}
-
 	default:
 	}
 	return true

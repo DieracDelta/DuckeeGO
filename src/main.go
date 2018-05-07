@@ -54,7 +54,6 @@ func main() {
 
 func addInstrumentationPre(curNode *astutil.Cursor) bool {
 	// switch curNode.Node().(type) {
-
 	return true
 
 }
@@ -218,6 +217,12 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 	case *ast.FuncType:
 	case *ast.BlockStmt:
 	case *ast.Ident:
+		castedNode := curNode.Node().(*ast.Ident)
+		if castedNode.Name == "int" {
+			castedNode.Name = "concolicTypes.ConcolicInt"
+
+		}
+
 	default:
 	}
 	return true

@@ -53,11 +53,34 @@ func main() {
 // }
 
 func addInstrumentationPre(curNode *astutil.Cursor) bool {
+	// switch curNode.Node().(type) {
+
+	return true
+
+}
+
+// TODO moo. add function lookup functionality
+// TODO not really used ever tho so who cares
+func containsIntType(curNode *ast.Node) bool {
+	switch (*curNode).(type) {
+	case *ast.BinaryExpr:
+		ducker1 := ((*curNode).(*ast.BinaryExpr).X).(ast.Node)
+		ducker2 := ((*curNode).(*ast.BinaryExpr).Y).(ast.Node)
+		return containsIntType(&ducker1) || containsIntType(&ducker2)
+	case *ast.BasicLit:
+		return (*curNode).(*ast.BasicLit).Kind == token.INT
+	default:
+		return false
+	}
+}
+
+func addInstrumentationPost(curNode *astutil.Cursor) bool {
+	fmt.Println(reflect.TypeOf(curNode.Node()))
+	switch curNode.Node().(type) {
 	// the idea is to find a binary expression
 	// then check if it contains an int type (or function that returns int type)
 	// replace with the node with callexpr if it does
 	// case *ast.
-	switch curNode.Node().(type) {
 	case *ast.BinaryExpr:
 		castedNode := curNode.Node().(*ast.BinaryExpr)
 
@@ -76,18 +99,11 @@ func addInstrumentationPre(curNode *astutil.Cursor) bool {
 			addedNode.Name = "Mul"
 		case token.QUO:
 			addedNode.Name = "Div"
-		case token.QUO_ASSIGN:
 		case token.REM:
 			addedNode.Name = "Rem"
 		default:
 			panic("unsupported operation!!")
 		}
-
-		// TODO add these to other places like a normal person yeet
-		// case token.ADD_ASSIGN:
-		// case token.MUL_ASSIGN:
-		// case token.SUB_ASSIGN:
-		// case token.REM_ASSIGN:
 
 		// depending on what it is, may not need to use int or w/e
 		// actNode := curNode.Node()
@@ -103,29 +119,6 @@ func addInstrumentationPre(curNode *astutil.Cursor) bool {
 
 		curNode.Replace(&replacementNode)
 		// }
-	}
-
-	return true
-
-}
-
-// TODO moo. add function lookup functionality
-func containsIntType(curNode *ast.Node) bool {
-	switch (*curNode).(type) {
-	case *ast.BinaryExpr:
-		ducker1 := ((*curNode).(*ast.BinaryExpr).X).(ast.Node)
-		ducker2 := ((*curNode).(*ast.BinaryExpr).Y).(ast.Node)
-		return containsIntType(&ducker1) || containsIntType(&ducker2)
-	case *ast.BasicLit:
-		return (*curNode).(*ast.BasicLit).Kind == token.INT
-	default:
-		return false
-	}
-}
-
-func addInstrumentationPost(curNode *astutil.Cursor) bool {
-	fmt.Println(reflect.TypeOf(curNode.Node()))
-	switch curNode.Node().(type) {
 	case *ast.BasicLit:
 		castedNode := curNode.Node().(*ast.BasicLit)
 		if castedNode.Kind == token.INT {
@@ -182,18 +175,48 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 						},
 					},
 				}
-			fmt.Printf("MOTHERUFKCER")
 			curNode.Replace(&bruh)
 			// TODO implement replacement
 		}
-	// case *ast.FuncType:
+	case *ast.AssignStmt:
+		castedNode := curNode.Node().(*ast.AssignStmt)
+		addedNode := &ast.Ident{
+			Name: "",
+		}
+		switch castedNode.Tok {
+		case token.ADD_ASSIGN:
+			addedNode.Name = "Add"
+		case token.SUB_ASSIGN:
+			addedNode.Name = "Sub"
+		case token.MUL_ASSIGN:
+			addedNode.Name = "Mul"
+		case token.QUO_ASSIGN:
+			addedNode.Name = "Div"
+		case token.REM_ASSIGN:
+			addedNode.Name = "Rem"
+		default:
+			return true
+		}
+
+		replacementNode :=
+			ast.AssignStmt{
+				Tok: token.ASSIGN,
+				Lhs: castedNode.Lhs,
+				Rhs: []ast.Expr{
+					&ast.CallExpr{
+						// TODO assert about x len
+						Fun: &ast.SelectorExpr{
+							X:   castedNode.Lhs[0],
+							Sel: addedNode,
+						},
+						Args: castedNode.Rhs,
+					},
+				},
+			}
+		curNode.Replace(&replacementNode)
+
+	case *ast.FuncType:
 	case *ast.BlockStmt:
-
-	case *ast.BinaryExpr:
-		// if onlyInts(curNode.(*ast.BinaryExpr)) {
-
-		// }
-		// // TODO implement pls kthxbai
 	case *ast.Ident:
 	default:
 	}
@@ -214,6 +237,8 @@ func getIdentifier(curNode *astutil.Cursor) string {
 	case *ast.ValueSpec:
 		castedParentNode := parentNode.(*ast.ValueSpec)
 		return castedParentNode.Names[index].Name
+	default:
+		break
 	}
 
 	return ""

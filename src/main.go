@@ -21,7 +21,6 @@ import "golang.org/x/tools/go/ast/astutil"
 // import "reflect"
 
 // argment is path to example program
-var mruNames []string
 
 func main() {
 	if false {
@@ -63,10 +62,12 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 	switch curNode.Node().(type) {
 	case *ast.BasicLit:
 		castedNode := curNode.Node().(*ast.BasicLit)
-		if castedNode.Kind == token.INT && len(mruNames) > 0 {
-			identifier := mruNames[0]
-			mruNames = mruNames[1:]
-
+		if castedNode.Kind == token.INT {
+			identifier := getIdentifier(curNode)
+			// if it's not a declaration of some sort lul
+			if identifier == "" {
+				break
+			}
 			bruh :=
 				ast.CompositeLit{
 					Type: &ast.SelectorExpr{
@@ -100,32 +101,43 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 			curNode.Replace(&bruh)
 			// TODO implement replacement
 		}
-		return true
 	// case *ast.FuncType:
 	case *ast.BlockStmt:
-		mruNames = mruNames[1:]
-		return true
 
 	case *ast.BinaryExpr:
 		// if onlyInts(curNode.(*ast.BinaryExpr)) {
 
 		// }
 		// // TODO implement pls kthxbai
-		return true
 	case *ast.Ident:
-		castedNode := curNode.Node().(*ast.Ident)
-		typeMetadata := castedNode.Obj
+		// castedNode := curNode.Node().(*ast.Ident)
+		// typeMetadata := castedNode.Obj
 		// if len(castedNode) != 1 {
 		// 	panic("oh ducking motherducker")
 		// }
 		// TODO add to this as we add more types
-		if typeMetadata != nil {
-			mruNames = append(mruNames, castedNode.Name)
-		}
-		return true
 	default:
-		return true
 	}
+	return true
+}
+
+func getIdentifier(curNode *astutil.Cursor) string {
+	index := curNode.Index()
+	parentNode := curNode.Parent()
+	switch parentNode.(type) {
+	case *ast.File:
+		break
+	case *ast.FuncDecl:
+		break
+	case *ast.AssignStmt:
+		castedParentNode := parentNode.(*ast.AssignStmt)
+		return castedParentNode.Lhs[index].(*ast.Ident).Name
+	case *ast.GenDecl:
+		castedParentNode := parentNode.(*ast.AssignStmt)
+		return castedParentNode.Lhs[index].(*ast.Ident).Name
+	}
+
+	return ""
 }
 
 func concolicExecute(instrumentedFile ast.Node) {

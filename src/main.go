@@ -6,8 +6,10 @@ import "os"
 
 import "fmt"
 
-// import "io/ioutil"
+import "io/ioutil"
+
 // for rewriting
+import "encoding/json"
 import "reflect"
 import "bytes"
 import "go/parser"
@@ -39,21 +41,13 @@ func main() {
 	ast.Print(fset, uninstrumentedAST)
 	instrumentedAST := astutil.Apply(uninstrumentedAST, astutil.ApplyFunc(addInstrumentationPre), astutil.ApplyFunc(addInstrumentationPost))
 
-	// concolicExecute(instrumentedAST)
 	var buf bytes.Buffer
 	printer.Fprint(&buf, fset, instrumentedAST)
 	fmt.Println(buf.String())
 }
 
-// case *ast.BinaryExpr:
-// case *ast.BasicLit:
-// if curNode.Kind == token.INT {
-// 	// implement replacement
-// 	fmt.Printf("quack quack %s\r\n", curNode.Value)
-// }
-
 func addInstrumentationPre(curNode *astutil.Cursor) bool {
-	// switch curNode.Node().(type) {
+	// TODO don't really need anything in here yet
 	return true
 
 }
@@ -400,6 +394,8 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 				}
 			curNode.Replace(&bruh)
 		}
+	case *ast.IfStmt:
+		// TODO worry about this
 	default:
 	}
 	return true

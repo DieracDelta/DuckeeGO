@@ -1,6 +1,6 @@
 package concolicTypes
 
-import "symTypes"
+import "../symTypes"
 import "github.com/aclements/go-z3/z3"
 
 type ConcolicInt struct {
@@ -8,6 +8,8 @@ type ConcolicInt struct {
 	Sym       symTypes.SymInt
   Constant  bool
 }
+
+// TODO: update these with z3 contexts
 
 func (self ConcolicInt) equals(o interface{}) ConcolicBool {
 	// return concInt.Value == other.Value

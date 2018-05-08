@@ -100,6 +100,33 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 			addedNode.Name = "Div"
 		case token.REM:
 			addedNode.Name = "Rem"
+		case token.AND:
+			addedNode.Name = "And"
+		case token.OR:
+			addedNode.Name = "Or"
+		case token.XOR:
+			addedNode.Name = "Xor"
+		case token.SHL:
+			addedNode.Name = "Shl"
+		// TODO add support for andnot
+		// case token.AND_NOT:
+		// 		addedNode.Name = "AndNot"
+		case token.LAND:
+			addedNode.Name = "LAnd"
+		case token.LOR:
+			addedNode.Name = "LOr"
+		case token.EQL:
+			addedNode.Name = "Equals"
+		case token.LSS:
+			addedNode.Name = "Lss"
+		case token.GTR:
+			addedNode.Name = "Gtr"
+		case token.NEQ:
+			addedNode.Name = "NEq"
+		case token.GEQ:
+			addedNode.Name = "GEq"
+		case token.LEQ:
+			addedNode.Name = "LEq"
 		default:
 			panic("unsupported operation!!")
 		}
@@ -211,6 +238,18 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 			addedNode.Name = "Div"
 		case token.REM_ASSIGN:
 			addedNode.Name = "Rem"
+		case token.AND_ASSIGN:
+			addedNode.Name = "And"
+		case token.OR_ASSIGN:
+			addedNode.Name = "Or"
+		case token.XOR_ASSIGN:
+			addedNode.Name = "XOr"
+		case token.SHL_ASSIGN:
+			addedNode.Name = "Shl"
+		case token.SHR_ASSIGN:
+			addedNode.Name = "Shr"
+		// case token.AND_NOT_ASSIGN:
+		// 	addedNode.Name = ""
 		default:
 			return true
 		}
@@ -230,6 +269,69 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 					},
 				},
 			}
+		curNode.Replace(&replacementNode)
+
+	case *ast.IncDecStmt:
+		castedNode := curNode.Node().(*ast.IncDecStmt)
+		addedNode := &ast.Ident{
+			Name: "",
+		}
+		switch castedNode.Tok {
+		case token.INC:
+			addedNode.Name = "Add"
+		case token.DEC:
+			addedNode.Name = "Sub"
+		}
+
+		regNode := &ast.BasicLit{
+			Kind:  token.INT,
+			Value: "1",
+		}
+
+		bruh :=
+			ast.CompositeLit{
+				Type: &ast.SelectorExpr{
+					X: &ast.Ident{
+						Name: "concolicTypes",
+					},
+					Sel: &ast.Ident{
+						Name: "ConcolicInt",
+					},
+				},
+				Elts: []ast.Expr{
+					regNode,
+					&ast.CompositeLit{
+						Type: &ast.SelectorExpr{
+							X: &ast.Ident{
+								Name: "symTypes",
+							},
+							Sel: &ast.Ident{
+								Name: "SymInt",
+							},
+						},
+						Elts: []ast.Expr{
+							&ast.BasicLit{
+								Kind:  token.INT,
+								Value: "true",
+							},
+						},
+					},
+				},
+			}
+
+		replacementNode := ast.AssignStmt{
+			Tok: token.ASSIGN,
+			Lhs: []ast.Expr{castedNode.X},
+			Rhs: []ast.Expr{
+				&ast.CallExpr{
+					Fun: &ast.SelectorExpr{
+						X:   castedNode.X,
+						Sel: addedNode,
+					},
+					Args: []ast.Expr{&bruh},
+				},
+			},
+		}
 		curNode.Replace(&replacementNode)
 
 	case *ast.FuncType:

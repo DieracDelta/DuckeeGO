@@ -3,20 +3,6 @@ package concolicTypes
 import "symTypes"
 import "github.com/aclements/go-z3/z3"
 
-// type ConcolicBool struct {
-// 	Value bool
-// 	Sym   sym.SymBool
-// }
-
-// func (concBool *ConcolicBool) equals(other ConcolicBool) ConcolicBool {
-//   // strange stuff...
-//   res =
-//   return ConcolicBool{
-//     Value : res,
-//     Sym   :
-//   }
-// }
-
 type ConcolicInt struct {
 	Value     int
 	Sym       symTypes.SymInt
@@ -28,12 +14,16 @@ func (self ConcolicInt) equals(o interface{}) ConcolicBool {
 	switch o.(type) {
 	case int:
 		res := self.Value == int(o)
+    sym := self.Sym.SymIntZ3Expr().Eq(z3.Int(int(o)))
 	case ConcolicInt:
 		res := self.Value == ConcolicInt(o).Value
+    sym := self.Sym.SymIntZ3Expr().Eq(ConcolicInt(o).Sym.SymIntZ3Expr())
 	default:
-    return ConcolicBool{Value: false, Sym: ...}
+    reportError("cannot compare with == : incompatible types", self, o)
+    // do something?
+    //return ConcolicBool{Value: false, Sym: nil}
 	}
-  return ConcolicBool{Value:res, Sym: ... }
+  return ConcolicBool{Value:res, Sym: sym}
 }
 
 func (self ConcolicInt) notEquals(o interface{}) ConcolicBool {

@@ -8,7 +8,6 @@ type SymInt struct {
 	id string
 }
 
-// TODO probably should be concolic bool
 func (self *SymInt) SymIntEquals(o interface{}) bool {
 	if reflect.TypeOf(o) != SymInt {
 		return false

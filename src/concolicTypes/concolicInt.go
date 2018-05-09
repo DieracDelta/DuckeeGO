@@ -1,11 +1,10 @@
 package concolicTypes
 
-import "../symTypes"
 import "github.com/aclements/go-z3/z3"
 
 type ConcolicInt struct {
 	Value     int
-	Sym       symTypes.SymInt
+	Sym       SymInt
   Constant  bool
 }
 

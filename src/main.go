@@ -67,7 +67,7 @@ func main() {
 			panic(err)
 		}
 
-		// ast.Print(fset, uninstrumentedAST)
+		ast.Print(fset, uninstrumentedAST)
 		instrumentedAST := astutil.Apply(uninstrumentedAST, astutil.ApplyFunc(addInstrumentationPre), astutil.ApplyFunc(addInstrumentationPost))
 
 		var buf bytes.Buffer
@@ -192,6 +192,7 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 			}
 			curNode.Replace(&replacemenetNode)
 		}
+		// ruckkerduck( vw * ConcreteValues, curPathConstrs []z3.Bool)
 	case *ast.BasicLit:
 		castedNode := curNode.Node().(*ast.BasicLit)
 		if castedNode.Kind == token.INT {
@@ -370,7 +371,6 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		}
 		curNode.Replace(&replacementNode)
 
-	case *ast.FuncType:
 	case *ast.BlockStmt:
 	case *ast.Ident:
 		castedNode := curNode.Node().(*ast.Ident)
@@ -438,6 +438,33 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		}
 	case *ast.IfStmt:
 		// TODO worry about this
+	case *ast.FuncType:
+		// ruckkerduck( vw * ConcreteValues, curPathConstrs []z3.Bool)
+		castedNode := curNode.Node().(*ast.FuncType)
+		newFuncArgs := []*ast.Field{
+			&ast.Field{
+				Names: []*ast.Ident{
+					&ast.Ident{
+						Name: "vw",
+					},
+				},
+				Type: &ast.Ident{
+					Name: "ConcolicTypes.ConcreteValues",
+				},
+			},
+			&ast.Field{
+				Names: []*ast.Ident{
+					&ast.Ident{
+						Name: "curPathConstrs",
+					},
+				},
+				Type: &ast.Ident{
+					Name: "*[]z3.Bool",
+				},
+			},
+		}
+		castedNode.Params.List = newFuncArgs
+
 	default:
 	}
 	return true

@@ -11,8 +11,8 @@ func MakeConcolicBoolVar(cv *ConcreteValues, name string) ConcolicBool {
 	return ConcolicBool{Value: cv.GetBoolValue(name), z3Expr: ctx.BoolConst(name)}
 }
 
-func MakeConcolicBoolConst(value bool) {
-	return ConcoliBool{Value: value, z3Expr: ctx.FromBool(value)}
+func MakeConcolicBoolConst(value bool) ConcolicBool {
+	return ConcolicBool{Value: value, z3Expr: ctx.FromBool(value)}
 }
 
 func (self ConcolicBool) equals(o interface{}) ConcolicBool {

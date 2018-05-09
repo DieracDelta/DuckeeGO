@@ -8,18 +8,20 @@ type ConcolicBool struct {
 }
 
 func (self ConcolicBool) equals(o interface{}) ConcolicBool {
+	var res bool
+	var sym z3.Bool
   switch o.(type) {
   case bool:
-    res := self.Value == bool(o)
-    sym := z3.Bool(self.Value == bool(o))
+    res = self.Value == bool(o.(bool))
+    sym = self.Sym.z3Expr.Eq(ctx.FromBool(o.(bool)))
   case ConcolicBool:
-    res := self.Value == ConcolicBool(o).Value
-    sym := z3.Bool(self.Value == ConcolicBool(o).Value)
+    res = self.Value == o.(ConcolicBool).Value
+    sym = self.Sym.z3Expr.Eq(o.(ConcolicBool).Sym.z3Expr)
   default:
     reportError("cannot compare with == : incompatible types", self, o)
     // do something?
   }
-  return ConcolicBool{Value: res, Sym: sym}
+  return ConcolicBool{Value: res, Sym: SymBool{sym}}
 }
 
 

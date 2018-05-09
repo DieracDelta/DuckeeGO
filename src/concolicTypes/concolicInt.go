@@ -29,7 +29,7 @@ func (self ConcolicInt) equals(o interface{}) ConcolicBool {
 }
 
 func (self ConcolicInt) notEquals(o interface{}) ConcolicBool {
-  return !self.equals(o)
+  return self.equals(o).Not()
 }
 
 func (self ConcolicInt) lt(o interface{}) ConcolicBool {

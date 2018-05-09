@@ -3,59 +3,57 @@ package concolicTypes
 import "github.com/aclements/go-z3/z3"
 
 type ConcolicInt struct {
-	Value int
-	Sym   SymInt
+	Value 	int
+	z3Expr  z3.Int
 }
-
-// TODO: update these with z3 contexts
 
 func MakeConcolicIntVar(cv *ConcreteValues, name string) ConcolicInt {
-	return ConcolicInt{cv.getIntValue(name), makeSymIntVar(name)}
+	return ConcolicInt{Value: cv.getIntValue(name), z3Expr: ctx.IntConst(name)}
 }
 
-func MakeConcolicIntConst(value int) {
-	return ConcolicInt{Value: value, Sym: ctx.FromInt(v)}
+func MakeConcolicIntConst(value int) ConcolicInt {
+	return ConcolicInt{Value: value, z3Expr: ctx.FromInt(int64(value), ctx.IntSort()).(z3.Int)}
 }
 
 // ================= BINOPS RETURNING BOOLS =================
 
 func ConcIntBinopToBool(concreteFunc func(a, b int) bool, z3Func func(az, bz z3.Int) z3.Bool, ac, bc ConcolicInt) ConcolicBool {
 	res := concreteFunc(ac.Value, bc.Value)
-	sym := z3Func(ac.Sym.z3Expr, bc.Sym.z3Expr)
-	return ConcolicBool{Value: res, Sym: SymBool{sym}}
+	sym := z3Func(ac.z3Expr, bc.z3Expr)
+	return ConcolicBool{Value: res, z3Expr: sym}
 }
 
-func (self ConcolicInt) ConcEq(other ConcolicInt) ConcolicBool {
+func (self ConcolicInt) ConcIntEq(other ConcolicInt) ConcolicBool {
 	eq := func(a, b int) bool { return a == b }
 	eqZ3 := func(az, bz z3.Int) z3.Bool { return az.Eq(bz) }
 	return ConcIntBinopToBool(eq, eqZ3, self, other)
 }
 
-func (self ConcolicInt) ConcNE(other ConcolicInt) ConcolicBool {
+func (self ConcolicInt) ConcIntNE(other ConcolicInt) ConcolicBool {
 	neq := func(a, b int) bool { return a != b }
 	neqZ3 := func(az, bz z3.Int) z3.Bool { return az.Eq(bz).Not() }
 	return ConcIntBinopToBool(neq, neqZ3, self, other)
 }
 
-func (self ConcolicInt) ConcLT(other ConcolicInt) ConcolicBool {
+func (self ConcolicInt) ConcIntLT(other ConcolicInt) ConcolicBool {
 	lt := func(a, b int) bool { return a < b }
 	ltZ3 := func(az, bz z3.Int) z3.Bool { return az.LT(bz) }
 	return ConcIntBinopToBool(lt, ltZ3, self, other)
 }
 
-func (self ConcolicInt) ConcLE(other ConcolicInt) ConcolicBool {
+func (self ConcolicInt) ConcIntLE(other ConcolicInt) ConcolicBool {
 	le := func(a, b int) bool { return a <= b }
 	leZ3 := func(az, bz z3.Int) z3.Bool { return az.LE(bz) }
 	return ConcIntBinopToBool(le, leZ3, self, other)
 }
 
-func (self ConcolicInt) ConcGT(other ConcolicInt) ConcolicBool {
+func (self ConcolicInt) ConcIntGT(other ConcolicInt) ConcolicBool {
 	gt := func(a, b int) bool { return a > b }
 	gtZ3 := func(az, bz z3.Int) z3.Bool { return az.GT(bz) }
 	return ConcIntBinopToBool(gt, gtZ3, self, other)
 }
 
-func (self ConcolicInt) ConcGE(other ConcolicInt) ConcolicBool {
+func (self ConcolicInt) ConcIntGE(other ConcolicInt) ConcolicBool {
 	ge := func(a, b int) bool { return a >= b }
 	geZ3 := func(az, bz z3.Int) z3.Bool { return az.GE(bz) }
 	return ConcIntBinopToBool(ge, geZ3, self, other)
@@ -65,39 +63,61 @@ func (self ConcolicInt) ConcGE(other ConcolicInt) ConcolicBool {
 
 func ConcIntBinopToInt(concreteFunc func(a, b int) int, z3Func func(az, bz z3.Int) z3.Int, ac, bc ConcolicInt) ConcolicInt {
 	res := concreteFunc(ac.Value, bc.Value)
-	sym := z3Func(ac.Sym.z3Expr, bc.Sym.z3Expr)
-	return ConcolicInt{Value: res, Sym: SymInt{sym}}
+	sym := z3Func(ac.z3Expr, bc.z3Expr)
+	return ConcolicInt{Value: res, z3Expr: sym}
 }
 
-func (self ConcolicInt) ConcAdd(other ConcolicInt) ConcolicInt {
+func (self ConcolicInt) ConcIntAdd(other ConcolicInt) ConcolicInt {
 	add := func(a, b int) int { return a + b }
 	addZ3 := func(az, bz z3.Int) z3.Int { return az.Add(bz) }
 	return ConcIntBinopToInt(add, addZ3, self, other)
 }
 
-func (self ConcolicInt) ConcSub(other ConcolicInt) ConcolicInt {
+func (self ConcolicInt) ConcIntSub(other ConcolicInt) ConcolicInt {
 	sub := func(a, b int) int { return a - b }
 	subZ3 := func(az, bz z3.Int) z3.Int { return az.Sub(bz) }
 	return ConcIntBinopToInt(sub, subZ3, self, other)
 }
 
-func (self ConcolicInt) ConcMul(other ConcolicInt) ConcolicInt {
+func (self ConcolicInt) ConcIntMul(other ConcolicInt) ConcolicInt {
 	mul := func(a, b int) int { return a * b }
 	mulZ3 := func(az, bz z3.Int) z3.Int { return az.Mul(bz) }
 	return ConcIntBinopToInt(mul, mulZ3, self, other)
 }
 
-func (self ConcolicInt) ConcDiv(other ConcolicInt) ConcolicInt {
+func (self ConcolicInt) ConcIntDiv(other ConcolicInt) ConcolicInt {
 	div := func(a, b int) int { return a / b }
 	divZ3 := func(az, bz z3.Int) z3.Int { return az.Div(bz) }
 	return ConcIntBinopToInt(div, divZ3, self, other)
 }
 
-func (self ConcolicInt) ConcMod(other ConcolicInt) ConcolicInt {
+func (self ConcolicInt) ConcIntMod(other ConcolicInt) ConcolicInt {
 	mod := func(a, b int) int { return a % b }
 	modZ3 := func(az, bz z3.Int) z3.Int { return az.Mod(bz) }
 	return ConcIntBinopToInt(mod, modZ3, self, other)
 }
+
+
+// ================= BINOPS BIT OPS RETURNING INTS =================
+
+func ConcIntBitBinop(concreteFunc func(a, b int) int, z3Func func(az, bz z3.BV) z3.BV, ac, bc ConcolicInt) ConcolicInt {
+  res := concreteFunc(ac.Value, bc.Value)
+  sym := z3Func(ac.z3Expr.ToBV(64), bc.z3Expr.ToBV(64)).SToInt()
+  return ConcolicInt{Value: res, z3Expr: sym}
+}
+
+func (self ConcolicInt) ConcIntAnd(other ConcolicInt) ConcolicInt {
+  and := func(a, b int) int { return a & b }
+  andZ3 := func(az, bz z3.BV) z3.BV { return az.And(bz) }
+  return ConcIntBitBinop(and, andZ3, self, other)
+}
+
+func (self ConcolicInt) ConcIntOr(other ConcolicInt) ConcolicInt {
+  or := func(a, b int) int { return a | b }
+  orZ3 := func(az, bz z3.BV) z3.BV { return az.Or(bz) }
+  return ConcIntBitBinop(or, orZ3, self, other)
+}
+
 
 /*
 

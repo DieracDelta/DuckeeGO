@@ -15,7 +15,6 @@ func setGlobalContext() {
 
 func concolicExecInput(testfunc reflect.Value, concreteValues *ConcreteValues) ([]reflect.Value, *[]z3.Bool) {
 	var currPathConstrs []z3.Bool
-	// f := reflect.ValueOf(testfunc)
 	args := []reflect.Value{reflect.ValueOf(concreteValues), reflect.ValueOf(&currPathConstrs)}
 	res := testfunc.Call(args)
 	return res, &currPathConstrs
@@ -89,12 +88,12 @@ func concolicExec(testfunc reflect.Value, maxiter int) {
 	}
 }
 
-func addPositivePathConstr(currPathConstrs *[]z3.Bool, constr z3.Bool) {
-	*currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr)
+func addPositivePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
+	*currPathConstrs = append(*currPathConstrs, constr.z3Expr)
 }
 
-func addNegativePathConstr(currPathConstrs *[]z3.Bool, constr z3.Bool) {
-	*currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr.Not())
+func addNegativePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
+	*currPathConstrs = append(*currPathConstrs, constr.z3Expr.Not())
 }
 
 type Handler struct{}
@@ -102,14 +101,14 @@ type Handler struct{}
 func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int {
 	var i ConcolicInt
 	var j ConcolicInt
-	i = makeConcolicIntVar(cv, "i")
-	j = makeConcolicIntVar(cv, "j")
-	k := i.ConcAdd(j)
-	b := i.ConcEq(j)
+	i = MakeConcolicIntVar(cv, "i")
+	j = MakeConcolicIntVar(cv, "j")
+	k := i.ConcIntAdd(j)
+	b := i.ConcIntEq(j)
 	if b.Value {
 		addPositivePathConstr(currPathConstrs, b)
 		fmt.Printf("grace is ")
-		b1 := i.ConcNE(j)
+		b1 := i.ConcIntNE(j)
 		if b1.Value {
 			addPositivePathConstr(currPathConstrs, b1)
 			fmt.Printf("mean")
@@ -120,7 +119,7 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 	} else {
 		addNegativePathConstr(currPathConstrs, b)
 		fmt.Printf("ducks ")
-		b1 := k.ConcEq(j)
+		b1 := k.ConcIntEq(j)
 		if b1.Value {
 			addPositivePathConstr(currPathConstrs, b1)
 			fmt.Printf("are great")
@@ -133,13 +132,13 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 
 	var x ConcolicInt
 	var y ConcolicInt
-	x = makeConcolicIntVar(cv, "x")
-	y = makeConcolicIntVar(cv, "y")
-	b2 := x.ConcGE(y)
+	x = MakeConcolicIntVar(cv, "x")
+	y = MakeConcolicIntVar(cv, "y")
+	b2 := x.ConcIntGE(y)
 	if b2.Value {
 		addPositivePathConstr(currPathConstrs, b2)
 		fmt.Printf("grace ")
-		b3 := x.ConcLT(y)
+		b3 := x.ConcIntLT(y)
 		if b3.Value {
 			addPositivePathConstr(currPathConstrs, b3)
 			fmt.Printf("< ")

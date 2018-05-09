@@ -3,6 +3,16 @@ package concolicTypes
 import "reflect"
 import "github.com/aclements/go-z3/z3"
 
+
+var ctx *z3.Context
+
+func setGlobalContext() {
+  ctxConfig := z3.NewContextConfig()
+  ctxConfig.SetUint("timeout", 5000)
+  ctx = z3.NewContext(ctxConfig)
+}
+
+
 func concolicExecInput(testfunc reflect.Method, branchCtx *z3.Context, concreteValues *ConcreteValues) ([]reflect.Value, []z3.Bool) {
 	var currPathConstrs []z3.Bool
 	f := reflect.ValueOf(testfunc)
@@ -37,9 +47,10 @@ func concolicExec(testfunc reflect.Method, maxiter int) {
 	seenAlready := make(map[*z3.Bool]bool)
 	inputs := initialConcreteValueQueue()
 	iter := 0
-	ctxConfig := z3.NewContextConfig()
-	ctxConfig.SetUint("timeout", 5000)
-	ctx := z3.NewContext(ctxConfig)
+  setGlobalContext()
+	// ctxConfig := z3.NewContextConfig()
+	// ctxConfig.SetUint("timeout", 5000)
+	// ctx := z3.NewContext(ctxConfig)
 	for (iter < maxiter) && !(inputs.isEmpty()) {
 		iter += 1
 		inputThisTime := inputs.dequeue()

@@ -90,6 +90,14 @@ func concolicExec(testfunc reflect.Value, maxiter int) {
 	}
 }
 
+func addPositivePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
+  *currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr)
+}
+
+func addNegativePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
+  *currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr.Not())
+}
+
 type Handler struct {}
 
 func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int {
@@ -97,22 +105,52 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 	var j ConcolicInt
 	i = makeConcolicIntVar(cv, "i")
 	j = makeConcolicIntVar(cv, "j")
-	b := i.ConcEq(j)
+  k := i.ConcAdd(j)
+  b := i.ConcEq(j)
 	if b.Value {
-		*currPathConstrs = append(*currPathConstrs, b.Sym.z3Expr)
+		addPositivePathConstr(currPathConstrs, b)
 		fmt.Printf("grace is ")
 		b1 := i.ConcNE(j)
 		if b1.Value {
-			*currPathConstrs = append(*currPathConstrs, b1.Sym.z3Expr)
-			fmt.Printf("mean")
+			addPositivePathConstr(currPathConstrs, b1)
+      fmt.Printf("mean")
 		} else {
-			*currPathConstrs = append(*currPathConstrs, b1.Sym.z3Expr.Not())
-			fmt.Printf("very helpful")
+			addNegativePathConstr(currPathConstrs, b1)
+      fmt.Printf("very helpful")
 		}
 	} else {
-		*currPathConstrs = append(*currPathConstrs, b.Sym.z3Expr.Not())
-		fmt.Printf("ducks")
+		addNegativePathConstr(currPathConstrs, b)
+    fmt.Printf("ducks ")
+    b1 := k.ConcEq(j)
+    if b1.Value {
+      addPositivePathConstr(currPathConstrs, b1)
+      fmt.Printf("are great")
+    } else {
+      addNegativePathConstr(currPathConstrs, b1)
+      fmt.Printf("are cute")
+    }
 	}
+  fmt.Println()
+
+  var x ConcolicInt
+  var y ConcolicInt
+  x = makeConcolicIntVar(cv, "x")
+  y = makeConcolicIntVar(cv, "y")
+  b2 := x.ConcGE(y)
+  if b2.Value {
+    addPositivePathConstr(currPathConstrs, b2)
+    fmt.Printf("grace ")
+    b3 := x.ConcLT(y)
+    if b3.Value {
+      addPositivePathConstr(currPathConstrs, b3)
+      fmt.Printf("< ")
+    } else {
+      addNegativePathConstr(currPathConstrs, b3)
+      fmt.Printf("> ")
+    }
+    fmt.Printf("ducks")
+  }
+
 	fmt.Println()
 	return 0
 }

@@ -16,6 +16,10 @@ func (cv *ConcreteValues) getIntValue(name string) int {
 	return cv.intVals[name]
 }
 
+func (cv *ConcreteValues) getIntMappings() map[string]int {
+	return cv.intVals
+}
+
 func (cv *ConcreteValues) addIntValue(name string, value int) {
 	cv.intVals[name] = value
 }

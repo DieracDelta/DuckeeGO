@@ -1,5 +1,6 @@
 package concolicTypes
 
+import "fmt"
 import "reflect"
 import "github.com/aclements/go-z3/z3"
 
@@ -26,7 +27,17 @@ func concolicFindInput(branchCtx *z3.Context, constraint z3.Bool, names *Concret
 	sat, err := solver.Check()
 	newInput := newConcreteValues()
 	if sat {
-
+		model := solver.Model()
+		for key, _ := range (names.getIntMappings()) {
+			modelValue := model.Eval(branchCtx.IntConst(key), true)
+			if modelValue != nil {
+				value, isLiteral, ok := modelValue.(z3.Int).AsInt64()
+				if isLiteral && ok {
+					newInput.addIntValue(key, int(value))
+				}
+			}
+		}
+		return true, newInput
 	} else if err != nil {
 		panic(err)
 	}
@@ -34,7 +45,7 @@ func concolicFindInput(branchCtx *z3.Context, constraint z3.Bool, names *Concret
 }
 
 func concolicExec(testfunc reflect.Method, maxiter int) {
-	seenAlready := make(map[*z3.Bool]bool)
+	// seenAlready := make(map[*z3.Bool]bool)
 	inputs := initialConcreteValueQueue()
 	iter := 0
 	ctxConfig := z3.NewContextConfig()
@@ -43,19 +54,41 @@ func concolicExec(testfunc reflect.Method, maxiter int) {
 	for (iter < maxiter) && !(inputs.isEmpty()) {
 		iter += 1
 		inputThisTime := inputs.dequeue()
-		res, branchConstrs := concolicExecInput(testfunc, ctx, inputThisTime)
+		_, branchConstrs := concolicExecInput(testfunc, ctx, inputThisTime)
+
+		fmt.Printf(branchConstrs.AsAST().String())
+
 		for b := 0; b < len(branchConstrs); b++ {
 			oppConstr := concolicForceBranch(b, ctx, branchConstrs...)
-			if _, seen := seenAlready[oppConstr]; !seen {
-				seenAlready[oppConstr] = true
+			// if _, seen := seenAlready[oppConstr]; !seen {
+				// seenAlready[oppConstr] = true
 				newInputFound, newInput := concolicFindInput(ctx, oppConstr, inputThisTime)
 				if newInputFound {
 					newInput.inherit(inputThisTime)
 					inputs.enqueue(newInput)
 				}
-			}
+			// }
 		}
 	}
+}
+
+func rubberducky(cv *ConcreteValues) {
+	var i concolicTypes.ConcolicInt
+	var j concolicTypes.ConcolicInt
+	i = concolicTypes.ConcolicInt{cv.getIntValue("i"), symTypes.SymInt{"i", false}}
+}
+
+func rubberducky() {
+	var i concolicTypes.ConcolicInt
+
+	i = concolicTypes.ConcolicInt{5, symTypes.SymInt{"i", false}}
+
+	i = i.Add(concolicTypes.ConcolicInt{1, symTypes.SymInt{true}})
+
+	j := concolicTypes.ConcolicInt{69, symTypes.SymInt{"j", false}}
+
+	i = i.Sub(concolicTypes.ConcolicInt{420, symTypes.SymInt{"", true}}.Add(j))
+
 }
 
 func main() {

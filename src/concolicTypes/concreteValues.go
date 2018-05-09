@@ -1,7 +1,8 @@
 package concolicTypes
 
 type ConcreteValues struct {
-	intVals map[string]int
+	intVals  map[string]int
+	boolVals map[string]bool
 }
 
 func newConcreteValues() *ConcreteValues {
@@ -14,6 +15,15 @@ func (cv *ConcreteValues) getIntValue(name string) int {
 		return 0
 	}
 	return cv.intVals[name]
+}
+
+func (cv *ConcreteValues) getBoolValue(name string) int {
+	if _, ok := cv.boolVals[name]; !ok {
+		cv.boolVals[name] = 0
+		return 0
+	}
+	return cv.intVals[name]
+
 }
 
 func (cv *ConcreteValues) getIntMappings() map[string]int {

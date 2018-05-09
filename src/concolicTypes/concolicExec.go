@@ -8,22 +8,21 @@ import "gitlab.com/mgmap/maps"
 var ctx *z3.Context
 
 func setGlobalContext() {
-  ctxConfig := z3.NewContextConfig()
-  ctxConfig.SetUint("timeout", 5000)
-  ctx = z3.NewContext(ctxConfig)
+	ctxConfig := z3.NewContextConfig()
+	ctxConfig.SetUint("timeout", 5000)
+	ctx = z3.NewContext(ctxConfig)
 }
-
 
 func concolicExecInput(testfunc reflect.Value, concreteValues *ConcreteValues) ([]reflect.Value, *[]z3.Bool) {
 	var currPathConstrs []z3.Bool
 	// f := reflect.ValueOf(testfunc)
-	args := []reflect.Value{ reflect.ValueOf(concreteValues), reflect.ValueOf(&currPathConstrs) }
+	args := []reflect.Value{reflect.ValueOf(concreteValues), reflect.ValueOf(&currPathConstrs)}
 	res := testfunc.Call(args)
 	return res, &currPathConstrs
 }
 
 func concolicForceBranch(branchNum int, branchConds ...z3.Bool) z3.Bool {
-	if (branchNum < len(branchConds)) {
+	if branchNum < len(branchConds) {
 		cond := ctx.FromBool(true).And(branchConds[0:branchNum]...).And(branchConds[branchNum].Not())
 		return cond
 	} else {
@@ -38,7 +37,7 @@ func concolicFindInput(constraint z3.Bool, names *ConcreteValues) (bool, *Concre
 	newInput := newConcreteValues()
 	if sat {
 		model := solver.Model()
-		for key, _ := range (names.getIntMappings()) {
+		for key, _ := range names.getIntMappings() {
 			modelValue := model.Eval(ctx.IntConst(key), true)
 			if modelValue != nil {
 				value, isLiteral, ok := modelValue.(z3.Int).AsInt64()
@@ -55,20 +54,20 @@ func concolicFindInput(constraint z3.Bool, names *ConcreteValues) (bool, *Concre
 }
 
 func concolicExec(testfunc reflect.Value, maxiter int) {
-  var hasher maps.Hasher
-  hasher = func(o interface{}) uint32 {
-    return uint32(o.(z3.Bool).AsAST().Hash())
-  }
+	var hasher maps.Hasher
+	hasher = func(o interface{}) uint32 {
+		return uint32(o.(z3.Bool).AsAST().Hash())
+	}
 
-  var equals maps.Equals
-  equals = func(a, b interface{}) bool {
-    return a.(z3.Bool).AsAST().Equal(b.(z3.Bool).AsAST())
-  }
-  seenAlready := maps.NewHashMap(hasher, equals)
+	var equals maps.Equals
+	equals = func(a, b interface{}) bool {
+		return a.(z3.Bool).AsAST().Equal(b.(z3.Bool).AsAST())
+	}
+	seenAlready := maps.NewHashMap(hasher, equals)
 
 	inputs := initialConcreteValueQueue()
 	iter := 0
-  setGlobalContext()
+	setGlobalContext()
 
 	for (iter < maxiter) && !(inputs.isEmpty()) {
 		iter += 1
@@ -91,65 +90,65 @@ func concolicExec(testfunc reflect.Value, maxiter int) {
 }
 
 func addPositivePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
-  *currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr)
+	*currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr)
 }
 
 func addNegativePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
-  *currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr.Not())
+	*currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr.Not())
 }
 
-type Handler struct {}
+type Handler struct{}
 
 func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int {
 	var i ConcolicInt
 	var j ConcolicInt
 	i = makeConcolicIntVar(cv, "i")
 	j = makeConcolicIntVar(cv, "j")
-  k := i.ConcAdd(j)
-  b := i.ConcEq(j)
+	k := i.ConcAdd(j)
+	b := i.ConcEq(j)
 	if b.Value {
 		addPositivePathConstr(currPathConstrs, b)
 		fmt.Printf("grace is ")
 		b1 := i.ConcNE(j)
 		if b1.Value {
 			addPositivePathConstr(currPathConstrs, b1)
-      fmt.Printf("mean")
+			fmt.Printf("mean")
 		} else {
 			addNegativePathConstr(currPathConstrs, b1)
-      fmt.Printf("very helpful")
+			fmt.Printf("very helpful")
 		}
 	} else {
 		addNegativePathConstr(currPathConstrs, b)
-    fmt.Printf("ducks ")
-    b1 := k.ConcEq(j)
-    if b1.Value {
-      addPositivePathConstr(currPathConstrs, b1)
-      fmt.Printf("are great")
-    } else {
-      addNegativePathConstr(currPathConstrs, b1)
-      fmt.Printf("are cute")
-    }
+		fmt.Printf("ducks ")
+		b1 := k.ConcEq(j)
+		if b1.Value {
+			addPositivePathConstr(currPathConstrs, b1)
+			fmt.Printf("are great")
+		} else {
+			addNegativePathConstr(currPathConstrs, b1)
+			fmt.Printf("are cute")
+		}
 	}
-  fmt.Println()
+	fmt.Println()
 
-  var x ConcolicInt
-  var y ConcolicInt
-  x = makeConcolicIntVar(cv, "x")
-  y = makeConcolicIntVar(cv, "y")
-  b2 := x.ConcGE(y)
-  if b2.Value {
-    addPositivePathConstr(currPathConstrs, b2)
-    fmt.Printf("grace ")
-    b3 := x.ConcLT(y)
-    if b3.Value {
-      addPositivePathConstr(currPathConstrs, b3)
-      fmt.Printf("< ")
-    } else {
-      addNegativePathConstr(currPathConstrs, b3)
-      fmt.Printf("> ")
-    }
-    fmt.Printf("ducks")
-  }
+	var x ConcolicInt
+	var y ConcolicInt
+	x = makeConcolicIntVar(cv, "x")
+	y = makeConcolicIntVar(cv, "y")
+	b2 := x.ConcGE(y)
+	if b2.Value {
+		addPositivePathConstr(currPathConstrs, b2)
+		fmt.Printf("grace ")
+		b3 := x.ConcLT(y)
+		if b3.Value {
+			addPositivePathConstr(currPathConstrs, b3)
+			fmt.Printf("< ")
+		} else {
+			addNegativePathConstr(currPathConstrs, b3)
+			fmt.Printf("> ")
+		}
+		fmt.Printf("ducks")
+	}
 
 	fmt.Println()
 	return 0

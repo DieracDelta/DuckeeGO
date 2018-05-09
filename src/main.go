@@ -357,66 +357,32 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		if castedNode.Kind == token.INT {
 			identifier := getIdentifier(curNode)
 			// if it's not a declaration of some sort lul
-			var theElt []ast.Expr
-			// TODO dry this out
+			var theArgs []ast.Expr
+			var varOrConst string
 			if identifier == "" {
-				theElt = []ast.Expr{
-					&ast.BasicLit{
-						Kind:  token.STRING,
-						Value: "\"\"",
-					},
-					&ast.BasicLit{
-						Kind:  token.INT,
-						Value: "true",
-					},
+				varOrConst = "Const"
+				theArgs = []ast.Expr{
+					castedNode,
 				}
 			} else {
-				theElt = []ast.Expr{
-					&ast.BasicLit{
-						Kind:  token.STRING,
-						Value: "\"" + identifier + "\"",
+				varOrConst = "Var"
+				theArgs = []ast.Expr{
+					&ast.Ident{
+						Name: "cv",
 					},
-					&ast.BasicLit{
-						Kind:  token.INT,
-						Value: "false",
+					&ast.Ident{
+						Name: "\"" + identifier + "\"",
 					},
 				}
-
 			}
 			bruh :=
-				ast.CompositeLit{
-					Type: &ast.SelectorExpr{
-						X: &ast.Ident{
-							Name: "concolicTypes",
-						},
-						Sel: &ast.Ident{
-							Name: "ConcolicInt",
-						},
+				ast.CallExpr{
+					Fun: &ast.Ident{
+						Name: "concolicTypes.MakeConcolic" + "Int" + varOrConst,
 					},
-					Elts: []ast.Expr{
-						&ast.CallExpr{
-							Fun: &ast.Ident{
-								Name: "cv.getIntValue",
-							},
-							Args: []ast.Expr{
-								castedNode,
-							},
-						},
-						&ast.CompositeLit{
-							Type: &ast.SelectorExpr{
-								X: &ast.Ident{
-									Name: "symTypes",
-								},
-								Sel: &ast.Ident{
-									Name: "SymInt",
-								},
-							},
-							Elts: theElt,
-						},
-					},
+					Args: theArgs,
 				}
 			curNode.Replace(&bruh)
-			// TODO implement replacement
 		} else if castedNode.Kind == token.STRING {
 
 		}
@@ -487,40 +453,12 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 			Value: "1",
 		}
 
-		bruh :=
-			ast.CompositeLit{
-				Type: &ast.SelectorExpr{
-					X: &ast.Ident{
-						Name: "concolicTypes",
-					},
-					Sel: &ast.Ident{
-						Name: "ConcolicInt",
-					},
-				},
-				Elts: []ast.Expr{
-					regNode,
-					&ast.CompositeLit{
-						Type: &ast.SelectorExpr{
-							X: &ast.Ident{
-								Name: "symTypes",
-							},
-							Sel: &ast.Ident{
-								Name: "SymInt",
-							},
-						},
-						Elts: []ast.Expr{
-							&ast.BasicLit{
-								Kind:  token.STRING,
-								Value: "\"\"",
-							},
-							&ast.BasicLit{
-								Kind:  token.INT,
-								Value: "true",
-							},
-						},
-					},
-				},
-			}
+		bruh := ast.CallExpr{
+			Fun: &ast.Ident{
+				Name: "concolicTypes.MakeConcolicIntConst",
+			},
+			Args: []ast.Expr{regNode},
+		}
 
 		replacementNode := ast.AssignStmt{
 			Tok: token.ASSIGN,
@@ -540,6 +478,7 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 	case *ast.BlockStmt:
 	case *ast.Ident:
 		castedNode := curNode.Node().(*ast.Ident)
+		var varOrConst, concType string
 		switch castedNode.Name {
 		case "int":
 			castedNode.Name = "concolicTypes.ConcolicInt"
@@ -548,59 +487,34 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		case "true":
 			fallthrough
 		case "false":
-			// TODO dry this out (combine it with other else ifs/put into method)
+			concType = "Bool"
 			identifier := getIdentifier(curNode)
-			var theElt []ast.Expr
+			var theArgs []ast.Expr
 			if identifier == "" {
-				theElt = []ast.Expr{
-					&ast.BasicLit{
-						Kind:  token.STRING,
-						Value: "\"\"",
-					},
-					&ast.BasicLit{
-						Kind:  token.INT,
-						Value: "true",
-					},
+				varOrConst = "Const"
+				theArgs = []ast.Expr{
+					castedNode,
 				}
 			} else {
-				theElt = []ast.Expr{
-					&ast.BasicLit{
-						Kind:  token.STRING,
-						Value: "\"" + identifier + "\"",
+				varOrConst = "Var"
+				theArgs = []ast.Expr{
+					&ast.Ident{
+						Name: "cv",
 					},
-					&ast.BasicLit{
-						Kind:  token.INT,
-						Value: "false",
+					&ast.Ident{
+						Name: "\"" + identifier + "\"",
 					},
 				}
-
 			}
 			bruh :=
-				ast.CompositeLit{
-					Type: &ast.SelectorExpr{
-						X: &ast.Ident{
-							Name: "concolicTypes",
-						},
-						Sel: &ast.Ident{
-							Name: "ConcolicBool",
-						},
+				ast.CallExpr{
+					Fun: &ast.Ident{
+						Name: "concolicTypes.MakeConcolic" + concType + varOrConst,
 					},
-					Elts: []ast.Expr{
-						castedNode,
-						&ast.CompositeLit{
-							Type: &ast.SelectorExpr{
-								X: &ast.Ident{
-									Name: "symTypes",
-								},
-								Sel: &ast.Ident{
-									Name: "SymBool",
-								},
-							},
-							Elts: theElt,
-						},
-					},
+					Args: theArgs,
 				}
 			curNode.Replace(&bruh)
+
 		}
 	case *ast.IfStmt:
 		// TODO worry about this
@@ -629,19 +543,19 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 				var randoType string
 				switch aParam.Type.(*ast.Ident).Name {
 				case "string":
-					randoType = "String"
-				case "int":
-					randoType = "Int"
-				case "bool":
-					randoType = "Bool"
+					fallthrough
 				case "concolicTypes.ConcolicString":
 					randoType = "String"
+				case "int":
+					fallthrough
 				case "concolicTypes.ConcolicInt":
 					randoType = "Int"
+				case "bool":
+					fallthrough
 				case "concolicTypes.ConcolicBool":
 					randoType = "Bool"
 				default:
-					fmt.Printf(aParam.Type.(*ast.Ident).Name)
+					fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
 					panic("WTF WE DON'T SUPPORT THIS TYPE!")
 
 				}

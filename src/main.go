@@ -2,48 +2,86 @@ package main
 
 // z3.stuff
 // import "github.com/aclements/go-z3/z3"
-import "os"
+import (
+	"github.com/otiai10/copy"
+	"os"
 
-import "fmt"
+	"fmt"
 
-import "io/ioutil"
+	"io/ioutil"
 
-// for rewriting
-import "encoding/json"
-import "reflect"
-import "bytes"
-import "go/parser"
-import "go/ast"
-import "go/token"
-import "go/printer"
-import "golang.org/x/tools/go/ast/astutil"
+	// for rewriting
+	"bytes"
+	"encoding/json"
+	"go/ast"
+	"go/parser"
+	"go/printer"
+	"go/token"
+	"golang.org/x/tools/go/ast/astutil"
+	"reflect"
+)
 
 // import "concolicTypes"
 
 // import "reflect"
 
 // argment is path to example program
+var DEST = "/tmp/DuckieConcolic/"
 
 func main() {
 	if false {
 		fmt.Print("mr duck\r\n")
 	}
-	fset := token.NewFileSet()
-	// TODO add more files  by including more args
-	filePath := os.Args[1]
 
-	uninstrumentedAST, err := parser.ParseFile(fset, filePath, nil, 0)
+	fileConfigPath := os.Args[1]
 
+	jsonFile, err := os.Open(fileConfigPath)
 	if err != nil {
 		panic(err)
 	}
 
-	ast.Print(fset, uninstrumentedAST)
-	instrumentedAST := astutil.Apply(uninstrumentedAST, astutil.ApplyFunc(addInstrumentationPre), astutil.ApplyFunc(addInstrumentationPost))
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	err = jsonFile.Close()
+	if err != nil {
+		panic(err)
+	}
 
-	var buf bytes.Buffer
-	printer.Fprint(&buf, fset, instrumentedAST)
-	fmt.Println(buf.String())
+	var configData ConfigData
+	err = json.Unmarshal(byteValue, &configData)
+	if err != nil {
+		panic(err)
+	}
+
+	err = copy.Copy(configData.ProjectPath, DEST)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, aGoFile := range configData.ConfigData {
+		fset := token.NewFileSet()
+		// TODO add more files  by including more args
+		filePath := configData.ProjectPath + aGoFile.FilePath
+		uninstrumentedAST, err := parser.ParseFile(fset, filePath, nil, 0)
+
+		if err != nil {
+			panic(err)
+		}
+
+		// ast.Print(fset, uninstrumentedAST)
+		instrumentedAST := astutil.Apply(uninstrumentedAST, astutil.ApplyFunc(addInstrumentationPre), astutil.ApplyFunc(addInstrumentationPost))
+
+		var buf bytes.Buffer
+		err = printer.Fprint(&buf, fset, instrumentedAST)
+		if err != nil {
+			panic(err)
+		}
+		// fmt.Println(buf.String())
+		_ = os.Remove(DEST + aGoFile.FilePath)
+		tmpFile, _ := os.Create(DEST + aGoFile.FilePath)
+		_, _ = tmpFile.WriteString(buf.String())
+		_ = tmpFile.Close()
+	}
+
 }
 
 func addInstrumentationPre(curNode *astutil.Cursor) bool {
@@ -304,6 +342,10 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 							},
 						},
 						Elts: []ast.Expr{
+							&ast.BasicLit{
+								Kind:  token.STRING,
+								Value: "\"\"",
+							},
 							&ast.BasicLit{
 								Kind:  token.INT,
 								Value: "true",

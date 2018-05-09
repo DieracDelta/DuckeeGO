@@ -1,17 +1,14 @@
 package main
 
-import "concolicTypes"
-import "symTypes"
+func rubberducky() {
+	var i int
 
-func main() {
+	i = 5
 
-	var a = 69
+	i++
 
-	// var a = concolicTypes.ConcolicInt{69, symTypes.SymInt{}}
+	j := 69
 
-	// var w = 1 + 2 + 3
-	// var x = 2
-	// var y = 3
-	// var z = x + y
-	// z += w + x + y
+	i -= 420 + j
+
 }

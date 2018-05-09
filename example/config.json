@@ -1,36 +1,40 @@
-[
-    {
-        "File": "duck.go",
-        "Functions": [
-            {
-                "Name": "quack",
-                "Object": "nil",
-                "Input": ["bool"],
-                "Output": ["nil"]
-            },
-            {
-                "Name": "duck",
-                "Object": "nil",
-                "Input": ["string"],
-                "Output": ["nil"]
-            },
-            {
-                "Name": "ducker",
-                "Object": "nil",
-                "Input": ["nil"],
-                "Output": ["string"]
-            }
-        ]
-    },
-    {
-        "File": "memey.go",
-        "Functions": [
-            {
-                "Name": "danck",
-                "Object": "nil",
-                "Input": ["bool", "int", "int"],
-                "Output": ["bool"]
-            }
-        ]
-    }
-]
+{
+    "ProjectPath": "../example/",
+    "Data" :
+    [
+        {
+            "RelFilePath": "duck.go",
+            "Functions": [
+                {
+                    "Name": "quack",
+                    "Object": "nil",
+                    "Input": ["bool"],
+                    "Output": ["nil"]
+                },
+                {
+                    "Name": "duck",
+                    "Object": "nil",
+                    "Input": ["string"],
+                    "Output": ["nil"]
+                },
+                {
+                    "Name": "ducker",
+                    "Object": "nil",
+                    "Input": ["nil"],
+                    "Output": ["string"]
+                }
+            ]
+        },
+        {
+            "RelFilePath": "memey.go",
+            "Functions": [
+                {
+                    "Name": "danck",
+                    "Object": "nil",
+                    "Input": ["bool", "int", "int"],
+                    "Output": ["bool"]
+                }
+            ]
+        }
+    ]
+}

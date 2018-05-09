@@ -3,7 +3,7 @@ package concolicTypes
 import "fmt"
 import "reflect"
 import "github.com/aclements/go-z3/z3"
-
+import "gitlab.com/mgmap/maps"
 
 var ctx *z3.Context
 
@@ -55,13 +55,21 @@ func concolicFindInput(constraint z3.Bool, names *ConcreteValues) (bool, *Concre
 }
 
 func concolicExec(testfunc reflect.Value, maxiter int) {
-	// seenAlready := make(map[*z3.Bool]bool)
+  var hasher maps.Hasher
+  hasher = func(o interface{}) uint32 {
+    return uint32(o.(z3.Bool).AsAST().Hash())
+  }
+
+  var equals maps.Equals
+  equals = func(a, b interface{}) bool {
+    return a.(z3.Bool).AsAST().Equal(b.(z3.Bool).AsAST())
+  }
+  seenAlready := maps.NewHashMap(hasher, equals)
+
 	inputs := initialConcreteValueQueue()
 	iter := 0
   setGlobalContext()
-	// ctxConfig := z3.NewContextConfig()
-	// ctxConfig.SetUint("timeout", 5000)
-	// ctx := z3.NewContext(ctxConfig)
+
 	for (iter < maxiter) && !(inputs.isEmpty()) {
 		iter += 1
 		inputThisTime := inputs.dequeue()
@@ -70,14 +78,14 @@ func concolicExec(testfunc reflect.Value, maxiter int) {
 		for b := 0; b < len(*branchConstrs); b++ {
 			oppConstr := concolicForceBranch(b, *branchConstrs...)
 			// fmt.Printf(oppConstr.AsAST().String())
-			// if _, seen := seenAlready[oppConstr]; !seen {
-				// seenAlready[oppConstr] = true
+			if seen := seenAlready.Get(oppConstr); seen == nil {
+				seenAlready.Put(oppConstr, true)
 				newInputFound, newInput := concolicFindInput(oppConstr, inputThisTime)
 				if newInputFound {
 					newInput.inherit(inputThisTime)
 					inputs.enqueue(newInput)
 				}
-			// }
+			}
 		}
 	}
 }
@@ -89,11 +97,11 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 	var j ConcolicInt
 	i = makeConcolicIntVar(cv, "i")
 	j = makeConcolicIntVar(cv, "j")
-	b := i.equals(j)
+	b := i.ConcEq(j)
 	if b.Value {
 		*currPathConstrs = append(*currPathConstrs, b.Sym.z3Expr)
 		fmt.Printf("grace is ")
-		b1 := i.notEquals(j)
+		b1 := i.ConcNE(j)
 		if b1.Value {
 			*currPathConstrs = append(*currPathConstrs, b1.Sym.z3Expr)
 			fmt.Printf("mean")

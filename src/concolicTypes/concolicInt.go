@@ -13,7 +13,7 @@ func makeConcolicIntVar(cv *ConcreteValues, name string) ConcolicInt {
 	return ConcolicInt{cv.getIntValue(name), makeSymIntVar(name)}
 }
 
-func (self ConcolicInt) equals(o interface{}) ConcolicBool {
+func (self ConcolicInt) ConcEq(o interface{}) ConcolicBool {
 	// return concInt.Value == other.Value
 	var res bool
 	var sym z3.Bool
@@ -32,12 +32,12 @@ func (self ConcolicInt) equals(o interface{}) ConcolicBool {
   return ConcolicBool{Value:res, Sym: SymBool{sym}}
 }
 
-func (self ConcolicInt) notEquals(o interface{}) ConcolicBool {
-	eqcb := self.equals(o)
+func (self ConcolicInt) ConcNE(o interface{}) ConcolicBool {
+	eqcb := self.ConcEq(o)
 	return ConcolicBool{Value:!eqcb.Value, Sym: SymBool{eqcb.Sym.z3Expr.Not()}}
 }
 
-func (self ConcolicInt) lt(o interface{}) ConcolicBool {
+func (self ConcolicInt) ConcLT(o interface{}) ConcolicBool {
 	// return concInt.Value == other.Value
 	var res bool
 	var sym z3.Bool
@@ -56,7 +56,7 @@ func (self ConcolicInt) lt(o interface{}) ConcolicBool {
   return ConcolicBool{Value:res, Sym: SymBool{sym}}
 }
 
-func (self ConcolicInt) le(o interface{}) ConcolicBool {
+func (self ConcolicInt) ConcLE(o interface{}) ConcolicBool {
 	// return concInt.Value == other.Value
 	var res bool
 	var sym z3.Bool
@@ -75,7 +75,7 @@ func (self ConcolicInt) le(o interface{}) ConcolicBool {
   return ConcolicBool{Value:res, Sym: SymBool{sym}}
 }
 
-func (self ConcolicInt) gt(o interface{}) ConcolicBool {
+func (self ConcolicInt) ConcGT(o interface{}) ConcolicBool {
 	// return concInt.Value == other.Value
 	var res bool
 	var sym z3.Bool
@@ -94,7 +94,7 @@ func (self ConcolicInt) gt(o interface{}) ConcolicBool {
   return ConcolicBool{Value:res, Sym: SymBool{sym}}
 }
 
-func (self ConcolicInt) ge(o interface{}) ConcolicBool {
+func (self ConcolicInt) ConcGE(o interface{}) ConcolicBool {
 	// return concInt.Value == other.Value
 	var res bool
 	var sym z3.Bool
@@ -113,7 +113,7 @@ func (self ConcolicInt) ge(o interface{}) ConcolicBool {
   return ConcolicBool{Value:res, Sym: SymBool{sym}}
 }
 
-func (self ConcolicInt) add(o interface{}) ConcolicInt {
+func (self ConcolicInt) ConcAdd(o interface{}) ConcolicInt {
 	// return concInt.Value == other.Value
 	var res int
 	var sym z3.Int

@@ -639,6 +639,5 @@ func getIdentifier(curNode *astutil.Cursor) string {
 	return ""
 }
 
-func concolicExecute(instrumentedFile ast.Node) {
-
+func isValid(node *ast.Node) bool {
 }

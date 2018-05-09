@@ -89,11 +89,11 @@ func concolicExec(testfunc reflect.Value, maxiter int) {
 	}
 }
 
-func addPositivePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
+func addPositivePathConstr(currPathConstrs *[]z3.Bool, constr z3.Bool) {
 	*currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr)
 }
 
-func addNegativePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
+func addNegativePathConstr(currPathConstrs *[]z3.Bool, constr z3.Bool) {
 	*currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr.Not())
 }
 

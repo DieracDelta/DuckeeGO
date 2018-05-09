@@ -1,5 +1,6 @@
 {
     "ProjectPath": "../example/",
+    "Package": "dab",
     "Data" :
     [
         {

@@ -67,7 +67,7 @@ func main() {
 			panic(err)
 		}
 
-		ast.Print(fset, uninstrumentedAST)
+		_ = ast.Print(fset, uninstrumentedAST)
 		instrumentedAST := astutil.Apply(uninstrumentedAST, astutil.ApplyFunc(addInstrumentationPre), astutil.ApplyFunc(addInstrumentationPost))
 
 		var buf bytes.Buffer
@@ -82,6 +82,165 @@ func main() {
 		_ = tmpFile.Close()
 	}
 
+	fset := token.NewFileSet()
+	var buf bytes.Buffer
+	err = printer.Fprint(&buf, fset, constructMain(configData))
+	if err != nil {
+		panic(err)
+	}
+	_ = os.Remove(DEST + "main.go")
+	tmpFile, _ := os.Create(DEST + "main.go")
+	_, _ = tmpFile.WriteString(buf.String())
+	_ = tmpFile.Close()
+
+}
+
+func constructMain(configData ConfigData) *ast.File {
+	stuff := &ast.File{
+		Name: &ast.Ident{
+			Name: configData.Package,
+		},
+		Decls: []ast.Decl{
+			&ast.GenDecl{
+				Tok: token.IMPORT,
+				Specs: []ast.Spec{
+					&ast.ImportSpec{
+						Path: &ast.BasicLit{
+							Kind:  token.STRING,
+							Value: "\"reflect\"",
+						},
+					},
+				},
+			},
+			&ast.GenDecl{
+				Tok: token.IMPORT,
+				Specs: []ast.Spec{
+					&ast.ImportSpec{
+						Path: &ast.BasicLit{
+							Kind:  token.STRING,
+							Value: "\"~/school/6.858/DuckDuckGo/src/concolicTypes\"",
+						},
+					},
+				},
+			},
+			&ast.FuncDecl{
+				Name: &ast.Ident{
+					Name: "main",
+				},
+				Type: &ast.FuncType{},
+				Body: &ast.BlockStmt{
+					List: []ast.Stmt{
+						&ast.AssignStmt{
+							Lhs: []ast.Expr{
+								&ast.Ident{
+									Name: "h",
+								},
+							},
+							Tok: token.DEFINE,
+							Rhs: []ast.Expr{
+								&ast.CallExpr{
+									Fun: &ast.Ident{
+										Name: "new",
+									},
+									Args: []ast.Expr{
+										&ast.Ident{
+											Name: "Handler",
+										},
+									},
+								},
+							},
+						},
+						&ast.AssignStmt{
+							Lhs: []ast.Expr{
+								&ast.Ident{
+									Name: "method",
+								},
+							},
+							Tok: token.DEFINE,
+							Rhs: []ast.Expr{
+								&ast.CallExpr{
+									Fun: &ast.SelectorExpr{
+										X: &ast.CallExpr{
+											Fun: &ast.SelectorExpr{
+												X:   &ast.Ident{Name: "reflect"},
+												Sel: &ast.Ident{Name: "ValueOf"},
+											},
+											Args: []ast.Expr{
+												&ast.Ident{Name: "h"},
+											},
+										},
+										Sel: &ast.Ident{Name: "MethodByName"},
+									},
+									Args: []ast.Expr{
+										&ast.BasicLit{
+											Kind:  token.STRING,
+											Value: "\"DONTWORRYABOUTITBRO\"",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, aThing := range configData.ConfigData {
+		for _, aFunc := range aThing.Functions {
+			node1 :=
+				&ast.AssignStmt{
+					Lhs: []ast.Expr{
+						&ast.Ident{
+							Name: "method",
+						},
+					},
+					Tok: token.ASSIGN,
+					Rhs: []ast.Expr{
+						&ast.CallExpr{
+							Fun: &ast.SelectorExpr{
+								X: &ast.CallExpr{
+									Fun: &ast.SelectorExpr{
+										X:   &ast.Ident{Name: "reflect"},
+										Sel: &ast.Ident{Name: "ValueOf"},
+									},
+									Args: []ast.Expr{
+										&ast.Ident{Name: "h"},
+									},
+								},
+								Sel: &ast.Ident{Name: "MethodByName"},
+							},
+							Args: []ast.Expr{
+								&ast.BasicLit{
+									Kind:  token.STRING,
+									Value: "\"" + aFunc.Name + "\"",
+								},
+							},
+						},
+					},
+				}
+			node2 := &ast.ExprStmt{
+				X: &ast.CallExpr{
+					Fun: &ast.Ident{Name: "concolicTypes.concolicExec"},
+					Args: []ast.Expr{
+						&ast.Ident{
+							Name: "method",
+						},
+						&ast.BasicLit{
+							Kind:  token.INT,
+							Value: "100",
+						},
+					},
+				},
+			}
+
+			stuff.Decls[2].(*ast.FuncDecl).Body.List = append(stuff.Decls[2].(*ast.FuncDecl).Body.List, node1)
+			stuff.Decls[2].(*ast.FuncDecl).Body.List = append(stuff.Decls[2].(*ast.FuncDecl).Body.List, node2)
+
+		}
+
+	}
+	return stuff
 }
 
 func addInstrumentationPre(curNode *astutil.Cursor) bool {
@@ -235,7 +394,14 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 						},
 					},
 					Elts: []ast.Expr{
-						castedNode,
+						&ast.CallExpr{
+							Fun: &ast.Ident{
+								Name: "cv.getIntValue",
+							},
+							Args: []ast.Expr{
+								castedNode,
+							},
+						},
 						&ast.CompositeLit{
 							Type: &ast.SelectorExpr{
 								X: &ast.Ident{
@@ -438,14 +604,82 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		}
 	case *ast.IfStmt:
 		// TODO worry about this
-	case *ast.FuncType:
+	case *ast.FuncDecl:
+		castedNode := curNode.Node().(*ast.FuncDecl)
+		castedNode.Recv = &ast.FieldList{
+			List: []*ast.Field{
+				&ast.Field{
+					Names: []*ast.Ident{
+						&ast.Ident{
+							Name: "h",
+						},
+					},
+					Type: &ast.Ident{
+						Name: "Handler",
+					},
+				},
+			},
+		}
+		castedType := castedNode.Type
+
+		for _, aParam := range castedType.Params.List {
+			// theType := aParam.Type.(*ast.Ident).Name
+			for _, aName := range aParam.Names {
+				// i = makeConcolicIntVar(cv, "i")
+				var randoType string
+				switch aParam.Type.(*ast.Ident).Name {
+				case "string":
+					randoType = "String"
+				case "int":
+					randoType = "Int"
+				case "bool":
+					randoType = "Bool"
+				case "concolicTypes.ConcolicString":
+					randoType = "String"
+				case "concolicTypes.ConcolicInt":
+					randoType = "Int"
+				case "concolicTypes.ConcolicBool":
+					randoType = "Bool"
+				default:
+					fmt.Printf(aParam.Type.(*ast.Ident).Name)
+					panic("WTF WE DON'T SUPPORT THIS TYPE!")
+
+				}
+				newNode := ast.AssignStmt{
+					Lhs: []ast.Expr{
+						&ast.Ident{
+							Name: aName.Name,
+						},
+					},
+					Tok: token.DEFINE,
+					Rhs: []ast.Expr{
+						&ast.CallExpr{
+							Fun: &ast.Ident{
+								Name: "concolicTypes.MakeConcolic" + randoType + "Var",
+							},
+							Args: []ast.Expr{
+								&ast.Ident{
+									Name: "cv",
+								},
+								&ast.Ident{
+									Name: "\"" + aName.Name + "\"",
+								},
+							},
+						},
+					},
+				}
+				castedNode.Body.List = append([]ast.Stmt{&newNode}, castedNode.Body.List...)
+
+			}
+
+		}
+
 		// ruckkerduck( vw * ConcreteValues, curPathConstrs []z3.Bool)
-		castedNode := curNode.Node().(*ast.FuncType)
 		newFuncArgs := []*ast.Field{
 			&ast.Field{
 				Names: []*ast.Ident{
 					&ast.Ident{
-						Name: "vw",
+						Name: "cw",
 					},
 				},
 				Type: &ast.Ident{
@@ -463,7 +697,7 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 				},
 			},
 		}
-		castedNode.Params.List = newFuncArgs
+		castedType.Params.List = newFuncArgs
 
 	default:
 	}

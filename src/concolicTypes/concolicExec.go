@@ -3,7 +3,7 @@ package concolicTypes
 import "fmt"
 import "reflect"
 import "github.com/aclements/go-z3/z3"
-
+import "gitlab.com/mgmap/maps"
 
 var ctx *z3.Context
 
@@ -55,13 +55,21 @@ func concolicFindInput(constraint z3.Bool, names *ConcreteValues) (bool, *Concre
 }
 
 func concolicExec(testfunc reflect.Value, maxiter int) {
-	// seenAlready := make(map[*z3.Bool]bool)
+  var hasher maps.Hasher
+  hasher = func(o interface{}) uint32 {
+    return uint32(o.(z3.Bool).AsAST().Hash())
+  }
+
+  var equals maps.Equals
+  equals = func(a, b interface{}) bool {
+    return a.(z3.Bool).AsAST().Equal(b.(z3.Bool).AsAST())
+  }
+  seenAlready := maps.NewHashMap(hasher, equals)
+
 	inputs := initialConcreteValueQueue()
 	iter := 0
   setGlobalContext()
-	// ctxConfig := z3.NewContextConfig()
-	// ctxConfig.SetUint("timeout", 5000)
-	// ctx := z3.NewContext(ctxConfig)
+
 	for (iter < maxiter) && !(inputs.isEmpty()) {
 		iter += 1
 		inputThisTime := inputs.dequeue()
@@ -70,16 +78,24 @@ func concolicExec(testfunc reflect.Value, maxiter int) {
 		for b := 0; b < len(*branchConstrs); b++ {
 			oppConstr := concolicForceBranch(b, *branchConstrs...)
 			// fmt.Printf(oppConstr.AsAST().String())
-			// if _, seen := seenAlready[oppConstr]; !seen {
-				// seenAlready[oppConstr] = true
+			if seen := seenAlready.Get(oppConstr); seen == nil {
+				seenAlready.Put(oppConstr, true)
 				newInputFound, newInput := concolicFindInput(oppConstr, inputThisTime)
 				if newInputFound {
 					newInput.inherit(inputThisTime)
 					inputs.enqueue(newInput)
 				}
-			// }
+			}
 		}
 	}
+}
+
+func addPositivePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
+  *currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr)
+}
+
+func addNegativePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
+  *currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr.Not())
 }
 
 type Handler struct {}
@@ -89,22 +105,52 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 	var j ConcolicInt
 	i = makeConcolicIntVar(cv, "i")
 	j = makeConcolicIntVar(cv, "j")
-	b := i.equals(j)
+  k := i.ConcAdd(j)
+  b := i.ConcEq(j)
 	if b.Value {
-		*currPathConstrs = append(*currPathConstrs, b.Sym.z3Expr)
+		addPositivePathConstr(currPathConstrs, b)
 		fmt.Printf("grace is ")
-		b1 := i.notEquals(j)
+		b1 := i.ConcNE(j)
 		if b1.Value {
-			*currPathConstrs = append(*currPathConstrs, b1.Sym.z3Expr)
-			fmt.Printf("mean")
+			addPositivePathConstr(currPathConstrs, b1)
+      fmt.Printf("mean")
 		} else {
-			*currPathConstrs = append(*currPathConstrs, b1.Sym.z3Expr.Not())
-			fmt.Printf("very helpful")
+			addNegativePathConstr(currPathConstrs, b1)
+      fmt.Printf("very helpful")
 		}
 	} else {
-		*currPathConstrs = append(*currPathConstrs, b.Sym.z3Expr.Not())
-		fmt.Printf("ducks")
+		addNegativePathConstr(currPathConstrs, b)
+    fmt.Printf("ducks ")
+    b1 := k.ConcEq(j)
+    if b1.Value {
+      addPositivePathConstr(currPathConstrs, b1)
+      fmt.Printf("are great")
+    } else {
+      addNegativePathConstr(currPathConstrs, b1)
+      fmt.Printf("are cute")
+    }
 	}
+  fmt.Println()
+
+  var x ConcolicInt
+  var y ConcolicInt
+  x = makeConcolicIntVar(cv, "x")
+  y = makeConcolicIntVar(cv, "y")
+  b2 := x.ConcGE(y)
+  if b2.Value {
+    addPositivePathConstr(currPathConstrs, b2)
+    fmt.Printf("grace ")
+    b3 := x.ConcLT(y)
+    if b3.Value {
+      addPositivePathConstr(currPathConstrs, b3)
+      fmt.Printf("< ")
+    } else {
+      addNegativePathConstr(currPathConstrs, b3)
+      fmt.Printf("> ")
+    }
+    fmt.Printf("ducks")
+  }
+
 	fmt.Println()
 	return 0
 }

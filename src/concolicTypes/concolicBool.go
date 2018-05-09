@@ -12,12 +12,15 @@ func (self ConcolicBool) equals(o interface{}) ConcolicBool {
   switch o.(type) {
   case bool:
     res := self.Value == bool(o)
+    sym := z3.Bool(self.Value == bool(o))
   case ConcolicBool:
     res := self.Value == ConcolicBool(o).Value
+    sym := z3.Bool(self.Value == ConcolicBool(o).Value)
   default:
-    return ConcolicBool{Value: false, Sym: ...}
+    reportError("cannot compare with == : incompatible types", self, o)
+    // do something?
   }
-  return ConcolicBool{Value: res, Sym: ...}
+  return ConcolicBool{Value: res, Sym: sym}
 }
 
 

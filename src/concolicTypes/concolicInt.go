@@ -11,7 +11,7 @@ func MakeConcolicIntVar(cv *ConcreteValues, name string) ConcolicInt {
 	return ConcolicInt{Value: cv.getIntValue(name), z3Expr: ctx.IntConst(name)}
 }
 
-func MakeConcolicIntConst(value int) {
+func MakeConcolicIntConst(value int) ConcolicInt {
 	return ConcolicInt{Value: value, z3Expr: ctx.FromInt(value)}
 }
 

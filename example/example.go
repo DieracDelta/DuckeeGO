@@ -1,6 +1,6 @@
-package duck
+package main
 
-func rubberducky() {
+func Rubberducky() {
 	var i int
 
 	i = 5

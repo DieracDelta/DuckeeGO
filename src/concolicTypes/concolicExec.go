@@ -88,12 +88,12 @@ func ConcolicExec(testfunc reflect.Value, maxiter int) {
 	}
 }
 
-func addPositivePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
-	*currPathConstrs = append(*currPathConstrs, constr.z3Expr)
+func AddPositivePathConstr(currPathConstrs *[]z3.Bool, constr z3.Bool) {
+	*currPathConstrs = append(*currPathConstrs, constr)
 }
 
-func addNegativePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
-	*currPathConstrs = append(*currPathConstrs, constr.z3Expr.Not())
+func AddNegativePathConstr(currPathConstrs *[]z3.Bool, constr z3.Bool) {
+	*currPathConstrs = append(*currPathConstrs, constr.Not())
 }
 
 type Handler struct{}
@@ -104,27 +104,27 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 	i = MakeConcolicIntVar(cv, "i")
 	j = MakeConcolicIntVar(cv, "j")
 	k := i.ConcIntAdd(j)
-	b := i.ConcIntEq(j)
+	b := i.ConcEq(j)
 	if b.Value {
-		addPositivePathConstr(currPathConstrs, b)
+		AddPositivePathConstr(currPathConstrs, b.Sym)
 		fmt.Printf("grace is ")
-		b1 := i.ConcIntNE(j)
+		b1 := i.ConcNE(j)
 		if b1.Value {
-			addPositivePathConstr(currPathConstrs, b1)
+			AddPositivePathConstr(currPathConstrs, b1.Sym)
 			fmt.Printf("mean")
 		} else {
-			addNegativePathConstr(currPathConstrs, b1)
+			AddNegativePathConstr(currPathConstrs, b1.Sym)
 			fmt.Printf("very helpful")
 		}
 	} else {
-		addNegativePathConstr(currPathConstrs, b)
+		AddNegativePathConstr(currPathConstrs, b.Sym)
 		fmt.Printf("ducks ")
-		b1 := k.ConcIntEq(j)
+		b1 := k.ConcEq(j)
 		if b1.Value {
-			addPositivePathConstr(currPathConstrs, b1)
+			AddPositivePathConstr(currPathConstrs, b1.Sym)
 			fmt.Printf("are great")
 		} else {
-			addNegativePathConstr(currPathConstrs, b1)
+			AddNegativePathConstr(currPathConstrs, b1.Sym)
 			fmt.Printf("are cute")
 		}
 	}
@@ -136,14 +136,14 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 	y = MakeConcolicIntVar(cv, "y")
 	b2 := x.ConcIntGE(y)
 	if b2.Value {
-		addPositivePathConstr(currPathConstrs, b2)
+		AddPositivePathConstr(currPathConstrs, b2.Sym)
 		fmt.Printf("grace ")
 		b3 := x.ConcIntLT(y)
 		if b3.Value {
-			addPositivePathConstr(currPathConstrs, b3)
+			AddPositivePathConstr(currPathConstrs, b3.Sym)
 			fmt.Printf("< ")
 		} else {
-			addNegativePathConstr(currPathConstrs, b3)
+			AddNegativePathConstr(currPathConstrs, b3.Sym)
 			fmt.Printf("> ")
 		}
 		fmt.Printf("ducks")

@@ -18,7 +18,7 @@ import (
 	"go/printer"
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
-	"reflect"
+	// "reflect"
 )
 
 // import "concolicTypes"
@@ -256,7 +256,7 @@ func constructMain(configData ConfigData) *ast.File {
 
 		}
 	}
-	stuff.Imports = []*ast.ImportSpec{a, b, c}
+	stuff.Imports = []*ast.ImportSpec{a, b}
 	return stuff
 }
 
@@ -282,7 +282,7 @@ func containsIntType(curNode *ast.Node) bool {
 }
 
 func addInstrumentationPost(curNode *astutil.Cursor) bool {
-	fmt.Println(reflect.TypeOf(curNode.Node()))
+	// fmt.Println(reflect.TypeOf(curNode.Node()))
 	switch curNode.Node().(type) {
 	// the idea is to find a binary expression
 	// then check if it contains an int type (or function that returns int type)
@@ -325,13 +325,13 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		case token.LOR:
 			addedNode.Name = "ConcBoolOr"
 		case token.EQL:
-			addedNode.Name = "ConcBoolEq"
+			addedNode.Name = "ConcEq"
 		case token.LSS:
 			addedNode.Name = "ConcIntLT"
 		case token.GTR:
 			addedNode.Name = "ConcIntGT"
 		case token.NEQ:
-			addedNode.Name = "ConcIntNE"
+			addedNode.Name = "ConcNE"
 		case token.GEQ:
 			addedNode.Name = "ConcIntGE"
 		case token.LEQ:
@@ -471,9 +471,9 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		}
 		switch castedNode.Tok {
 		case token.INC:
-			addedNode.Name = "Add"
+			addedNode.Name = "ConcIntAdd"
 		case token.DEC:
-			addedNode.Name = "Sub"
+			addedNode.Name = "ConcIntSub"
 		}
 
 		regNode := &ast.BasicLit{
@@ -656,6 +656,20 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 					panic("WTF WE DON'T SUPPORT THIS TYPE!")
 
 				}
+				newNode2 := ast.AssignStmt{
+					Lhs: []ast.Expr{
+						&ast.Ident{
+							Name: "_",
+						},
+					},
+					Tok: token.ASSIGN,
+					Rhs: []ast.Expr{
+						&ast.Ident{
+							Name: aName.Name,
+						},
+					},
+				}
+				castedNode.Body.List = append([]ast.Stmt{&newNode2}, castedNode.Body.List...)
 				newNode := ast.AssignStmt{
 					Lhs: []ast.Expr{
 						&ast.Ident{

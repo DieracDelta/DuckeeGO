@@ -1,13 +1,13 @@
 {
     "ProjectPath": "../example/",
-    "Package": "duck",
+    "Package": "main",
     "Data" :
     [
         {
             "RelFilePath": "duck.go",
             "Functions": [
                 {
-                    "Name": "quack",
+                    "Name": "Quack",
                     "Object": "nil",
                     "Input": ["bool"],
                     "Output": ["nil"]
@@ -18,7 +18,7 @@
             "RelFilePath": "memey.go",
             "Functions": [
                 {
-                    "Name": "danck",
+                    "Name": "Danck",
                     "Object": "nil",
                     "Input": ["bool", "int", "int"],
                     "Output": ["bool"]

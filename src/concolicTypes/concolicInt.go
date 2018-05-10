@@ -3,8 +3,8 @@ package concolicTypes
 import "github.com/aclements/go-z3/z3"
 
 type ConcolicInt struct {
-	Value 	int
-	z3Expr  z3.Int
+	Value  int
+	z3Expr z3.Int
 }
 
 func MakeConcolicIntVar(cv *ConcreteValues, name string) ConcolicInt {
@@ -20,16 +20,16 @@ func MakeConcolicIntConst(value int) ConcolicInt {
 func ConcIntBinopToBool(concreteFunc func(a, b int) bool, z3Func func(az, bz z3.Int) z3.Bool, ac, bc ConcolicInt) ConcolicBool {
 	res := concreteFunc(ac.Value, bc.Value)
 	sym := z3Func(ac.z3Expr, bc.z3Expr)
-	return ConcolicBool{Value: res, z3Expr: sym}
+	return ConcolicBool{Value: res, Sym: sym}
 }
 
-func (self ConcolicInt) ConcIntEq(other ConcolicInt) ConcolicBool {
+func (self ConcolicInt) ConcEq(other ConcolicInt) ConcolicBool {
 	eq := func(a, b int) bool { return a == b }
 	eqZ3 := func(az, bz z3.Int) z3.Bool { return az.Eq(bz) }
 	return ConcIntBinopToBool(eq, eqZ3, self, other)
 }
 
-func (self ConcolicInt) ConcIntNE(other ConcolicInt) ConcolicBool {
+func (self ConcolicInt) ConcNE(other ConcolicInt) ConcolicBool {
 	neq := func(a, b int) bool { return a != b }
 	neqZ3 := func(az, bz z3.Int) z3.Bool { return az.Eq(bz).Not() }
 	return ConcIntBinopToBool(neq, neqZ3, self, other)
@@ -100,56 +100,56 @@ func (self ConcolicInt) ConcIntMod(other ConcolicInt) ConcolicInt {
 // ================= UNOP BIT OPS RETURNING INTS =================
 
 func (self ConcolicInt) ConcIntNot() ConcolicInt {
-  res := ^self.Value
-  sym := self.z3Expr.ToBV(64).Not().SToInt()
-  return ConcolicInt{Value: res, z3Expr: sym}
+	res := ^self.Value
+	sym := self.z3Expr.ToBV(64).Not().SToInt()
+	return ConcolicInt{Value: res, z3Expr: sym}
 }
 
 // ================= BINOPS BIT OPS RETURNING INTS =================
 
 func ConcIntBitBinop(concreteFunc func(a, b int) int, z3Func func(az, bz z3.BV) z3.BV, ac, bc ConcolicInt) ConcolicInt {
-  res := concreteFunc(ac.Value, bc.Value)
-  sym := z3Func(ac.z3Expr.ToBV(64), bc.z3Expr.ToBV(64)).SToInt()
-  return ConcolicInt{Value: res, z3Expr: sym}
+	res := concreteFunc(ac.Value, bc.Value)
+	sym := z3Func(ac.z3Expr.ToBV(64), bc.z3Expr.ToBV(64)).SToInt()
+	return ConcolicInt{Value: res, z3Expr: sym}
 }
 
 func (self ConcolicInt) ConcIntAnd(other ConcolicInt) ConcolicInt {
-  and := func(a, b int) int { return a & b }
-  andZ3 := func(az, bz z3.BV) z3.BV { return az.And(bz) }
-  return ConcIntBitBinop(and, andZ3, self, other)
+	and := func(a, b int) int { return a & b }
+	andZ3 := func(az, bz z3.BV) z3.BV { return az.And(bz) }
+	return ConcIntBitBinop(and, andZ3, self, other)
 }
 
 func (self ConcolicInt) ConcIntOr(other ConcolicInt) ConcolicInt {
-  or := func(a, b int) int { return a | b }
-  orZ3 := func(az, bz z3.BV) z3.BV { return az.Or(bz) }
-  return ConcIntBitBinop(or, orZ3, self, other)
+	or := func(a, b int) int { return a | b }
+	orZ3 := func(az, bz z3.BV) z3.BV { return az.Or(bz) }
+	return ConcIntBitBinop(or, orZ3, self, other)
 }
 
 func (self ConcolicInt) ConcIntXOr(other ConcolicInt) ConcolicInt {
-  xor := func(a, b int) int { return a ^ b }
-  xorZ3 := func(az, bz z3.BV) z3.BV { return az.Xor(bz) }
-  return ConcIntBitBinop(xor, xorZ3, self, other)
+	xor := func(a, b int) int { return a ^ b }
+	xorZ3 := func(az, bz z3.BV) z3.BV { return az.Xor(bz) }
+	return ConcIntBitBinop(xor, xorZ3, self, other)
 }
 
 func (self ConcolicInt) ConcIntSHL(other ConcolicInt) ConcolicInt {
-  // user beware!!
-  shl := func(a, b int) int { return a << uint(b) }
-  shlZ3 := func(az, bz z3.BV) z3.BV { return az.Lsh(bz) }
-  return ConcIntBitBinop(shl, shlZ3, self, other)
+	// user beware!!
+	shl := func(a, b int) int { return a << uint(b) }
+	shlZ3 := func(az, bz z3.BV) z3.BV { return az.Lsh(bz) }
+	return ConcIntBitBinop(shl, shlZ3, self, other)
 }
 
 // arithmetic right shift
 func (self ConcolicInt) ConcIntSHR(other ConcolicInt) ConcolicInt {
-  // user beware!!
-  shr := func(a, b int) int { return a >> uint(b) }
-  shrZ3 := func(az, bz z3.BV) z3.BV { return az.SRsh(bz) }
-  return ConcIntBitBinop(shr, shrZ3, self, other)
+	// user beware!!
+	shr := func(a, b int) int { return a >> uint(b) }
+	shrZ3 := func(az, bz z3.BV) z3.BV { return az.SRsh(bz) }
+	return ConcIntBitBinop(shr, shrZ3, self, other)
 }
 
 func (self ConcolicInt) ConcIntAndNot(other ConcolicInt) ConcolicInt {
-  andnot := func(a, b int) int { return a &^ b }
-  andnotZ3 := func(az, bz z3.BV) z3.BV { return az.And(bz.Not()) }
-  return ConcIntBitBinop(andnot, andnotZ3, self, other)
+	andnot := func(a, b int) int { return a &^ b }
+	andnotZ3 := func(az, bz z3.BV) z3.BV { return az.And(bz.Not()) }
+	return ConcIntBitBinop(andnot, andnotZ3, self, other)
 }
 
 /*

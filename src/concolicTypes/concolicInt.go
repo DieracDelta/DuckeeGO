@@ -97,6 +97,13 @@ func (self ConcolicInt) ConcIntMod(other ConcolicInt) ConcolicInt {
 	return ConcIntBinopToInt(mod, modZ3, self, other)
 }
 
+// ================= UNOP BIT OPS RETURNING INTS =================
+
+func (self ConcolicInt) ConcIntNot() ConcolicInt {
+  res := ^self.Value
+  sym := self.z3Expr.ToBV(64).Not().SToInt()
+  return ConcolicInt{Value: res, z3Expr: sym}
+}
 
 // ================= BINOPS BIT OPS RETURNING INTS =================
 
@@ -118,6 +125,32 @@ func (self ConcolicInt) ConcIntOr(other ConcolicInt) ConcolicInt {
   return ConcIntBitBinop(or, orZ3, self, other)
 }
 
+func (self ConcolicInt) ConcIntXOr(other ConcolicInt) ConcolicInt {
+  xor := func(a, b int) int { return a ^ b }
+  xorZ3 := func(az, bz z3.BV) z3.BV { return az.Xor(bz) }
+  return ConcIntBitBinop(xor, xorZ3, self, other)
+}
+
+func (self ConcolicInt) ConcIntSHL(other ConcolicInt) ConcolicInt {
+  // user beware!!
+  shl := func(a, b int) int { return a << uint(b) }
+  shlZ3 := func(az, bz z3.BV) z3.BV { return az.Lsh(bz) }
+  return ConcIntBitBinop(shl, shlZ3, self, other)
+}
+
+// arithmetic right shift
+func (self ConcolicInt) ConcIntSHR(other ConcolicInt) ConcolicInt {
+  // user beware!!
+  shr := func(a, b int) int { return a >> uint(b) }
+  shrZ3 := func(az, bz z3.BV) z3.BV { return az.SRsh(bz) }
+  return ConcIntBitBinop(shr, shrZ3, self, other)
+}
+
+func (self ConcolicInt) ConcIntAndNot(other ConcolicInt) ConcolicInt {
+  andnot := func(a, b int) int { return a &^ b }
+  andnotZ3 := func(az, bz z3.BV) z3.BV { return az.And(bz.Not()) }
+  return ConcIntBitBinop(andnot, andnotZ3, self, other)
+}
 
 /*
 

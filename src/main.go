@@ -313,30 +313,29 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		case token.OR:
 			addedNode.Name = "ConcIntOr"
 		case token.XOR:
-			addedNode.Name = "XOR"
+			addedNode.Name = "ConcIntXOr"
 		case token.SHL:
-			addedNode.Name = "Shl"
+			addedNode.Name = "ConcIntSHL"
 		case token.SHR:
-			addedNode.Name = "fucking hell"
-		// TODO add support for andnot
+			addedNode.Name = "ConcIntSHR"
 		case token.AND_NOT:
-			addedNode.Name = "AndNot"
+			addedNode.Name = "ConcBoolAndNot"
 		case token.LAND:
-			addedNode.Name = "ConcBool"
+			addedNode.Name = "ConcBoolAnd"
 		case token.LOR:
-			addedNode.Name = "LOr"
+			addedNode.Name = "ConcBoolOr"
 		case token.EQL:
-			addedNode.Name = "Equals"
+			addedNode.Name = "ConcBoolEq"
 		case token.LSS:
-			addedNode.Name = "Lss"
+			addedNode.Name = "ConcIntLT"
 		case token.GTR:
-			addedNode.Name = "Gtr"
+			addedNode.Name = "ConcIntGT"
 		case token.NEQ:
-			addedNode.Name = "NEq"
+			addedNode.Name = "ConcIntNE"
 		case token.GEQ:
-			addedNode.Name = "GEq"
+			addedNode.Name = "ConcIntGE"
 		case token.LEQ:
-			addedNode.Name = "LEq"
+			addedNode.Name = "ConcIntLE"
 		default:
 			panic("unsupported operation!!")
 		}
@@ -364,7 +363,17 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 				Fun: &ast.SelectorExpr{
 					X: castedNode.X,
 					Sel: &ast.Ident{
-						Name: "Not",
+						Name: "ConcBoolNot",
+					},
+				},
+			}
+			curNode.Replace(&replacemenetNode)
+		case token.XOR:
+			replacemenetNode := ast.CallExpr{
+				Fun: &ast.SelectorExpr{
+					X: castedNode.X,
+					Sel: &ast.Ident{
+						Name: "ConcIntNot",
 					},
 				},
 			}
@@ -413,27 +422,27 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		}
 		switch castedNode.Tok {
 		case token.ADD_ASSIGN:
-			addedNode.Name = "Add"
+			addedNode.Name = "ConcIntAdd"
 		case token.SUB_ASSIGN:
-			addedNode.Name = "Sub"
+			addedNode.Name = "ConcIntSub"
 		case token.MUL_ASSIGN:
-			addedNode.Name = "Mul"
+			addedNode.Name = "ConcIntMul"
 		case token.QUO_ASSIGN:
-			addedNode.Name = "Div"
+			addedNode.Name = "ConcIntDiv"
 		case token.REM_ASSIGN:
-			addedNode.Name = "Rem"
+			addedNode.Name = "ConcIntMod"
 		case token.AND_ASSIGN:
-			addedNode.Name = "And"
+			addedNode.Name = "ConcIntAnd"
 		case token.OR_ASSIGN:
-			addedNode.Name = "Or"
+			addedNode.Name = "ConcIntOr"
 		case token.XOR_ASSIGN:
-			addedNode.Name = "XOr"
+			addedNode.Name = "ConcIntXOr"
 		case token.SHL_ASSIGN:
-			addedNode.Name = "Shl"
+			addedNode.Name = "ConcIntSHL"
 		case token.SHR_ASSIGN:
-			addedNode.Name = "Shr"
-		// case token.AND_NOT_ASSIGN:
-		// 	addedNode.Name = ""
+			addedNode.Name = "ConcIntSHR"
+		case token.AND_NOT_ASSIGN:
+			addedNode.Name = "ConcBoolAndNot"
 		default:
 			return true
 		}

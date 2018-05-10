@@ -15,23 +15,6 @@ func MakeConcolicBoolConst(value bool) ConcolicBool {
 	return ConcolicBool{Value: value, z3Expr: ctx.FromBool(value)}
 }
 
-func (self ConcolicBool) equals(o interface{}) ConcolicBool {
-	var res bool
-	var sym z3.Bool
-	switch o.(type) {
-	case bool:
-		res = self.Value == bool(o.(bool))
-		sym = self.z3Expr.Eq(ctx.FromBool(o.(bool)))
-	case ConcolicBool:
-		res = self.Value == o.(ConcolicBool).Value
-		sym = self.z3Expr.Eq(o.(ConcolicBool).z3Expr)
-	default:
-		reportError("cannot compare with == : incompatible types", self, o)
-		// do something?
-	}
-	return ConcolicBool{Value: res, z3Expr: sym}
-}
-
 // ================= UNOPS =================
 
 func (self ConcolicBool) ConcBoolNot() ConcolicBool {
@@ -46,6 +29,12 @@ func ConcBoolBinopToBool(concreteFunc func(a, b bool) bool, z3Func func(az, bz z
 	return ConcolicBool{Value: res, z3Expr: sym}
 }
 
+func (self ConcolicBool) ConcBoolEq(other ConcolicBool) ConcolicBool {
+	eq := func(a, b bool) bool { return a == b }
+	eqZ3 := func(az, bz z3.Bool) z3.Bool { return az.Eq(bz) }
+	return ConcBoolBinopToBool(eq, eqZ3, self, other)
+}
+
 func (self ConcolicBool) ConcBoolAnd(other ConcolicBool) ConcolicBool {
 	and := func(a, b bool) bool { return a && b }
 	andZ3 := func(az, bz z3.Bool) z3.Bool { return az.And(bz) }
@@ -56,10 +45,4 @@ func (self ConcolicBool) ConcBoolOr(other ConcolicBool) ConcolicBool {
 	or := func(a, b bool) bool { return a || b }
 	orZ3 := func(az, bz z3.Bool) z3.Bool { return az.Or(bz) }
 	return ConcBoolBinopToBool(or, orZ3, self, other)
-}
-
-func (self ConcolicBool) ConcBoolAndNot(other ConcolicBool) ConcolicBool {
-	andNot := func(a, b bool) bool { return a &^ b }
-	andNotZ3 := func(az, bz z3.Bool) z3.Bool { return az.And(bz.Not()) }
-	return ConcBoolBinopToBool(andNot, andNotZ3, self, other)
 }

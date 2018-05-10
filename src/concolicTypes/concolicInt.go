@@ -12,7 +12,7 @@ func MakeConcolicIntVar(cv *ConcreteValues, name string) ConcolicInt {
 }
 
 func MakeConcolicIntConst(value int) ConcolicInt {
-	return ConcolicInt{Value: value, z3Expr: ctx.FromInt(value)}
+	return ConcolicInt{Value: value, z3Expr: ctx.FromInt(int64(value), ctx.IntSort()).(z3.Int)}
 }
 
 // ================= BINOPS RETURNING BOOLS =================
@@ -96,6 +96,28 @@ func (self ConcolicInt) ConcIntMod(other ConcolicInt) ConcolicInt {
 	modZ3 := func(az, bz z3.Int) z3.Int { return az.Mod(bz) }
 	return ConcIntBinopToInt(mod, modZ3, self, other)
 }
+
+
+// ================= BINOPS BIT OPS RETURNING INTS =================
+
+func ConcIntBitBinop(concreteFunc func(a, b int) int, z3Func func(az, bz z3.BV) z3.BV, ac, bc ConcolicInt) ConcolicInt {
+  res := concreteFunc(ac.Value, bc.Value)
+  sym := z3Func(ac.z3Expr.ToBV(64), bc.z3Expr.ToBV(64)).SToInt()
+  return ConcolicInt{Value: res, z3Expr: sym}
+}
+
+func (self ConcolicInt) ConcIntAnd(other ConcolicInt) ConcolicInt {
+  and := func(a, b int) int { return a & b }
+  andZ3 := func(az, bz z3.BV) z3.BV { return az.And(bz) }
+  return ConcIntBitBinop(and, andZ3, self, other)
+}
+
+func (self ConcolicInt) ConcIntOr(other ConcolicInt) ConcolicInt {
+  or := func(a, b int) int { return a | b }
+  orZ3 := func(az, bz z3.BV) z3.BV { return az.Or(bz) }
+  return ConcIntBitBinop(or, orZ3, self, other)
+}
+
 
 /*
 

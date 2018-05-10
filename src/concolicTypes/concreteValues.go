@@ -31,7 +31,7 @@ func (cv *ConcreteValues) addIntValue(name string, value int) {
 // ================= BOOLS =================
 
 // initialize unseen bools to false
-func (cv *ConcreteValues) getBoolValue(name string) int {
+func (cv *ConcreteValues) GetBoolValue(name string) bool {
 	if _, ok := cv.boolVals[name]; !ok {
 		cv.boolVals[name] = false
 		return false

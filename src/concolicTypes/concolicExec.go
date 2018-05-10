@@ -89,11 +89,11 @@ func concolicExec(testfunc reflect.Value, maxiter int) {
 }
 
 func addPositivePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
-	*currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr)
+	*currPathConstrs = append(*currPathConstrs, constr.z3Expr)
 }
 
 func addNegativePathConstr(currPathConstrs *[]z3.Bool, constr ConcolicBool) {
-	*currPathConstrs = append(*currPathConstrs, constr.Sym.z3Expr.Not())
+	*currPathConstrs = append(*currPathConstrs, constr.z3Expr.Not())
 }
 
 type Handler struct{}
@@ -101,8 +101,8 @@ type Handler struct{}
 func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int {
 	var i ConcolicInt
 	var j ConcolicInt
-	i = makeConcolicIntVar(cv, "i")
-	j = makeConcolicIntVar(cv, "j")
+	i = MakeConcolicIntVar(cv, "i")
+	j = MakeConcolicIntVar(cv, "j")
 	k := i.ConcIntAdd(j)
 	b := i.ConcIntEq(j)
 	if b.Value {
@@ -132,8 +132,8 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 
 	var x ConcolicInt
 	var y ConcolicInt
-	x = makeConcolicIntVar(cv, "x")
-	y = makeConcolicIntVar(cv, "y")
+	x = MakeConcolicIntVar(cv, "x")
+	y = MakeConcolicIntVar(cv, "y")
 	b2 := x.ConcIntGE(y)
 	if b2.Value {
 		addPositivePathConstr(currPathConstrs, b2)

@@ -67,6 +67,9 @@ func main() {
 			panic(err)
 		}
 
+		astutil.AddImport(fset, uninstrumentedAST, "concolicTypes")
+		astutil.AddImport(fset, uninstrumentedAST, "github.com/aclements/go-z3/z3")
+
 		_ = ast.Print(fset, uninstrumentedAST)
 		instrumentedAST := astutil.Apply(uninstrumentedAST, astutil.ApplyFunc(addInstrumentationPre), astutil.ApplyFunc(addInstrumentationPost))
 
@@ -84,7 +87,10 @@ func main() {
 
 	fset := token.NewFileSet()
 	var buf bytes.Buffer
-	err = printer.Fprint(&buf, fset, constructMain(configData))
+	mainFile := constructMain(configData)
+	astutil.AddImport(fset, mainFile, "reflect")
+	astutil.AddImport(fset, mainFile, "concolicTypes")
+	err = printer.Fprint(&buf, fset, mainFile)
 	if err != nil {
 		panic(err)
 	}
@@ -96,32 +102,43 @@ func main() {
 }
 
 func constructMain(configData ConfigData) *ast.File {
+	a := &ast.ImportSpec{
+		Path: &ast.BasicLit{
+			Kind:  token.STRING,
+			Value: "\"concolicTypes\"",
+		},
+	}
+	b := &ast.ImportSpec{
+		Path: &ast.BasicLit{
+			Kind:  token.STRING,
+			Value: "\"reflect\"",
+		},
+	}
+	d := &ast.TypeSpec{
+		Name: &ast.Ident{
+			Name: "Handler",
+		},
+		Type: &ast.StructType{
+			Fields: &ast.FieldList{},
+		},
+	}
+
 	stuff := &ast.File{
 		Name: &ast.Ident{
 			Name: configData.Package,
 		},
 		Decls: []ast.Decl{
 			&ast.GenDecl{
-				Tok: token.IMPORT,
-				Specs: []ast.Spec{
-					&ast.ImportSpec{
-						Path: &ast.BasicLit{
-							Kind:  token.STRING,
-							Value: "\"reflect\"",
-						},
-					},
-				},
+				Tok:   token.IMPORT,
+				Specs: []ast.Spec{a},
 			},
 			&ast.GenDecl{
-				Tok: token.IMPORT,
-				Specs: []ast.Spec{
-					&ast.ImportSpec{
-						Path: &ast.BasicLit{
-							Kind:  token.STRING,
-							Value: "\"~/school/6.858/DuckDuckGo/src/concolicTypes\"",
-						},
-					},
-				},
+				Tok:   token.IMPORT,
+				Specs: []ast.Spec{b},
+			},
+			&ast.GenDecl{
+				Tok:   token.TYPE,
+				Specs: []ast.Spec{d},
 			},
 			&ast.FuncDecl{
 				Name: &ast.Ident{
@@ -221,7 +238,7 @@ func constructMain(configData ConfigData) *ast.File {
 				}
 			node2 := &ast.ExprStmt{
 				X: &ast.CallExpr{
-					Fun: &ast.Ident{Name: "concolicTypes.concolicExec"},
+					Fun: &ast.Ident{Name: "concolicTypes.ConcolicExec"},
 					Args: []ast.Expr{
 						&ast.Ident{
 							Name: "method",
@@ -234,12 +251,12 @@ func constructMain(configData ConfigData) *ast.File {
 				},
 			}
 
-			stuff.Decls[2].(*ast.FuncDecl).Body.List = append(stuff.Decls[2].(*ast.FuncDecl).Body.List, node1)
-			stuff.Decls[2].(*ast.FuncDecl).Body.List = append(stuff.Decls[2].(*ast.FuncDecl).Body.List, node2)
+			stuff.Decls[3].(*ast.FuncDecl).Body.List = append(stuff.Decls[3].(*ast.FuncDecl).Body.List, node1)
+			stuff.Decls[3].(*ast.FuncDecl).Body.List = append(stuff.Decls[3].(*ast.FuncDecl).Body.List, node2)
 
 		}
-
 	}
+	stuff.Imports = []*ast.ImportSpec{a, b, c}
 	return stuff
 }
 
@@ -282,28 +299,30 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 
 		switch castedNode.Op {
 		case token.ADD:
-			addedNode.Name = "Add"
+			addedNode.Name = "ConcIntAdd"
 		case token.SUB:
-			addedNode.Name = "Sub"
+			addedNode.Name = "ConcIntSub"
 		case token.MUL:
-			addedNode.Name = "Mul"
+			addedNode.Name = "ConcIntMul"
 		case token.QUO:
-			addedNode.Name = "Div"
+			addedNode.Name = "ConcIntDiv"
 		case token.REM:
-			addedNode.Name = "Rem"
+			addedNode.Name = "ConcIntMod"
 		case token.AND:
-			addedNode.Name = "And"
+			addedNode.Name = "ConcIntAnd"
 		case token.OR:
-			addedNode.Name = "Or"
+			addedNode.Name = "ConcIntOr"
 		case token.XOR:
-			addedNode.Name = "Xor"
+			addedNode.Name = "XOR"
 		case token.SHL:
 			addedNode.Name = "Shl"
+		case token.SHR:
+			addedNode.Name = "fucking hell"
 		// TODO add support for andnot
-		// case token.AND_NOT:
-		// 		addedNode.Name = "AndNot"
+		case token.AND_NOT:
+			addedNode.Name = "AndNot"
 		case token.LAND:
-			addedNode.Name = "LAnd"
+			addedNode.Name = "ConcBool"
 		case token.LOR:
 			addedNode.Name = "LOr"
 		case token.EQL:
@@ -517,6 +536,75 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 
 		}
 	case *ast.IfStmt:
+		castedNode := curNode.Node().(*ast.IfStmt)
+		cond := castedNode.Cond
+		castedNode.Cond = &ast.SelectorExpr{
+			X: cond,
+			Sel: &ast.Ident{
+				Name: "Value",
+			},
+		}
+		castedNode.Body.List = append(
+			[]ast.Stmt{
+				// TODO it might be better to SHA shit here tbh
+				&ast.ExprStmt{
+					X: &ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X: &ast.Ident{
+								Name: "concolicTypes",
+							},
+							Sel: &ast.Ident{
+								Name: "AddPositivePathConstr",
+							},
+						},
+						Args: []ast.Expr{
+							&ast.BasicLit{
+								Kind:  token.STRING,
+								Value: "currPathConstrs",
+							},
+							&ast.SelectorExpr{
+								X: cond,
+								Sel: &ast.Ident{
+									Name: "Sym",
+								},
+							},
+						},
+					},
+				},
+			},
+			castedNode.Body.List...)
+		if castedNode.Else != nil {
+			castedNode.Else = &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ExprStmt{
+						X: &ast.CallExpr{
+							Fun: &ast.SelectorExpr{
+								X: &ast.Ident{
+									Name: "concolicTypes",
+								},
+								Sel: &ast.Ident{
+									Name: "AddNegativePathConstr",
+								},
+							},
+							Args: []ast.Expr{
+								&ast.BasicLit{
+									Kind:  token.STRING,
+									Value: "currPathConstrs",
+								},
+								&ast.SelectorExpr{
+									X: cond,
+									Sel: &ast.Ident{
+										Name: "Sym",
+									},
+								},
+							},
+						},
+					},
+					castedNode.Else,
+				},
+			}
+		}
+
 		// TODO worry about this
 	case *ast.FuncDecl:
 		castedNode := curNode.Node().(*ast.FuncDecl)
@@ -593,17 +681,17 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 			&ast.Field{
 				Names: []*ast.Ident{
 					&ast.Ident{
-						Name: "cw",
+						Name: "cv",
 					},
 				},
 				Type: &ast.Ident{
-					Name: "ConcolicTypes.ConcreteValues",
+					Name: "* concolicTypes.ConcreteValues",
 				},
 			},
 			&ast.Field{
 				Names: []*ast.Ident{
 					&ast.Ident{
-						Name: "curPathConstrs",
+						Name: "currPathConstrs",
 					},
 				},
 				Type: &ast.Ident{
@@ -640,4 +728,5 @@ func getIdentifier(curNode *astutil.Cursor) string {
 }
 
 func isValid(node *ast.Node) bool {
+	return true
 }

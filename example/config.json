@@ -1,6 +1,6 @@
 {
     "ProjectPath": "../example/",
-    "Package": "dab",
+    "Package": "duck",
     "Data" :
     [
         {
@@ -11,18 +11,6 @@
                     "Object": "nil",
                     "Input": ["bool"],
                     "Output": ["nil"]
-                },
-                {
-                    "Name": "duck",
-                    "Object": "nil",
-                    "Input": ["string"],
-                    "Output": ["nil"]
-                },
-                {
-                    "Name": "ducker",
-                    "Object": "nil",
-                    "Input": ["nil"],
-                    "Output": ["string"]
                 }
             ]
         },

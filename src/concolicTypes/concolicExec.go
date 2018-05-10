@@ -52,7 +52,7 @@ func concolicFindInput(constraint z3.Bool, names *ConcreteValues) (bool, *Concre
 	return false, newInput
 }
 
-func concolicExec(testfunc reflect.Value, maxiter int) {
+func ConcolicExec(testfunc reflect.Value, maxiter int) {
 	var hasher maps.Hasher
 	hasher = func(o interface{}) uint32 {
 		return uint32(o.(z3.Bool).AsAST().Hash())
@@ -156,5 +156,5 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 func Main() {
 	h := new(Handler)
 	method := reflect.ValueOf(h).MethodByName("Rubberducky")
-	concolicExec(method, 100)
+	ConcolicExec(method, 100)
 }

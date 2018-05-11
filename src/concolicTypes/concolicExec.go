@@ -106,25 +106,25 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 	k := i.ConcIntAdd(j)
 	b := i.ConcEq(j)
 	if b.Value {
-		AddPositivePathConstr(currPathConstrs, b.z3Expr)
+		AddPositivePathConstr(currPathConstrs, b.Z3Expr)
 		fmt.Printf("grace is ")
 		b1 := i.ConcNE(j)
 		if b1.Value {
-			AddPositivePathConstr(currPathConstrs, b1.Sym)
+			AddPositivePathConstr(currPathConstrs, b1.Z3Expr)
 			fmt.Printf("mean")
 		} else {
-			AddNegativePathConstr(currPathConstrs, b1.Sym)
+			AddNegativePathConstr(currPathConstrs, b1.Z3Expr)
 			fmt.Printf("very helpful")
 		}
 	} else {
-		AddNegativePathConstr(currPathConstrs, b.Sym)
+		AddNegativePathConstr(currPathConstrs, b.Z3Expr)
 		fmt.Printf("ducks ")
 		b1 := k.ConcEq(j)
 		if b1.Value {
-			AddPositivePathConstr(currPathConstrs, b1.Sym)
+			AddPositivePathConstr(currPathConstrs, b1.Z3Expr)
 			fmt.Printf("are great")
 		} else {
-			AddNegativePathConstr(currPathConstrs, b1.Sym)
+			AddNegativePathConstr(currPathConstrs, b1.Z3Expr)
 			fmt.Printf("are cute")
 		}
 	}
@@ -136,14 +136,14 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 	y = MakeConcolicIntVar(cv, "y")
 	b2 := x.ConcIntGE(y)
 	if b2.Value {
-		AddPositivePathConstr(currPathConstrs, b2.Sym)
+		AddPositivePathConstr(currPathConstrs, b2.Z3Expr)
 		fmt.Printf("grace ")
 		b3 := x.ConcIntLT(y)
 		if b3.Value {
-			AddPositivePathConstr(currPathConstrs, b3.Sym)
+			AddPositivePathConstr(currPathConstrs, b3.Z3Expr)
 			fmt.Printf("< ")
 		} else {
-			AddNegativePathConstr(currPathConstrs, b3.Sym)
+			AddNegativePathConstr(currPathConstrs, b3.Z3Expr)
 			fmt.Printf("> ")
 		}
 		fmt.Printf("ducks")

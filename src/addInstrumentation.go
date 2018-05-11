@@ -7,14 +7,7 @@ import (
 	// "reflect"
 )
 
-var nodeNumber = 0
-
 func addInstrumentationPre(curNode *astutil.Cursor) bool {
-	newId := ast.AstId{Id: nodeNumber}
-	ast.BinaryExpr
-	pointer := curNode.Node().GetId()
-	// *pointer = *newId
-	nodeNumber++
 	// TODO don't really need anything in here yet
 	return true
 }

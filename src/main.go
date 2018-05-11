@@ -75,11 +75,11 @@ func main() {
 		queueOfThings = queueThing{
 			stage1: stage1{
 				stmts:  []ast.Node{},
-				parent: []int{},
+				parent: []ast.Node{},
 			},
 			stage2: stage2{
 				stmts:        []ast.Node{},
-				parentParent: []int{},
+				parentParent: []ast.Node{},
 			},
 		}
 		// TODO add more files  by including more args
@@ -121,11 +121,11 @@ func main() {
 	queueOfThings = queueThing{
 		stage1: stage1{
 			stmts:  []ast.Node{},
-			parent: []int{},
+			parent: []ast.Node{},
 		},
 		stage2: stage2{
 			stmts:        []ast.Node{},
-			parentParent: []int{},
+			parentParent: []ast.Node{},
 		},
 	}
 

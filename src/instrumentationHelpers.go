@@ -491,7 +491,6 @@ func instrumentCallExpr(curNode *astutil.Cursor) {
 	switch castedNode.Fun.(type) {
 	case *ast.Ident:
 		if castedNode.Fun == nil || castedNode.Fun.(*ast.Ident).Obj == nil || castedNode.Fun.(*ast.Ident).Obj.Decl == nil {
-
 			break
 		}
 		objectified := castedNode.Fun.(*ast.Ident).Obj.Decl.(*ast.FuncDecl)
@@ -503,7 +502,6 @@ func instrumentCallExpr(curNode *astutil.Cursor) {
 			objectified = nil
 		}
 		fmt.Printf("SHISTSHITSHTI")
-		ast.Print(token.NewFileSet(), objectifiedNode)
 
 		newNode := &ast.CallExpr{
 			Fun: &ast.FuncLit{
@@ -512,15 +510,14 @@ func instrumentCallExpr(curNode *astutil.Cursor) {
 				},
 				Body: &ast.BlockStmt{
 					List: []ast.Stmt{
-						&ast.ExprStmt{
-							X: castedNode,
+						&ast.ReturnStmt{
+							Results: []ast.Expr{castedNode},
 						},
 					},
 				},
 			},
 		}
 		if objectified != nil {
-			fmt.Printf("MOTHERFUCKER")
 			declaration := castedNode.Fun.(*ast.Ident).Obj.Decl.(*ast.FuncDecl)
 			// name := declaration.Name.Name
 			paramList := declaration.Type.Params.List
@@ -549,6 +546,17 @@ func instrumentCallExpr(curNode *astutil.Cursor) {
 					}
 				}
 			}
+
+			for i, _ := range castedNode.Args {
+				castedNode.Args[i] = &ast.SelectorExpr{
+					X: castedNode.Args[i],
+					Sel: &ast.Ident{
+						Name: "Value",
+					},
+				}
+
+			}
+
 			newNode.Fun.(*ast.FuncLit).Body.List = append(
 				[]ast.Stmt{&ast.ExprStmt{
 					X: &ast.CallExpr{

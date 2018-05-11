@@ -7,7 +7,7 @@ type ConcreteValues struct {
 }
 
 func newConcreteValues() *ConcreteValues {
-	return &ConcreteValues{intVals: make(map[string]int), boolVals: make(map[string]bool)}
+	return &ConcreteValues{intVals: make(map[string]int), boolVals: make(map[string]bool), stringVals: make(map[string]string)}
 }
 
 // ================= INTS =================
@@ -31,6 +31,7 @@ func (cv *ConcreteValues) addIntValue(name string, value int) {
 
 // ================= STRINGS =================
 
+// initialize unseen strings to empty
 func (cv *ConcreteValues) getStringValue(name string) string {
 	if _, ok := cv.stringVals[name]; !ok {
 		cv.stringVals[name] = ""
@@ -76,8 +77,14 @@ func (cv *ConcreteValues) inherit(other *ConcreteValues) {
 	}
 
 	for keyOther, valOther := range other.boolVals {
-		if _, seen := cv.intVals[keyOther]; !seen {
+		if _, seen := cv.boolVals[keyOther]; !seen {
 			cv.boolVals[keyOther] = valOther
+		}
+	}
+	
+	for keyOther, valOther := range other.stringVals {
+		if _, seen := cv.stringVals[keyOther]; !seen {
+			cv.stringVals[keyOther] = valOther
 		}
 	}
 }

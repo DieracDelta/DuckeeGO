@@ -4,11 +4,11 @@ import "github.com/aclements/go-z3/z3"
 
 type ConcolicBool struct {
 	Value 	bool
-	Z3Expr  z3.Bool
+	Z3Expr 	z3.Bool
 }
 
-func MakeConcolicBoolVar(cv *ConcreteValues, name string) ConcolicBool {
-	return ConcolicBool{Value: cv.GetBoolValue(name), Z3Expr: ctx.BoolConst(name)}
+func MakeConcolicBoolVar(name string) ConcolicBool {
+	return ConcolicBool{Value: concreteValuesGlobal.GetBoolValue(name), Z3Expr: ctx.BoolConst(name)}
 }
 
 func MakeConcolicBoolConst(value bool) ConcolicBool {

@@ -4,29 +4,29 @@ import "github.com/aclements/go-z3/z3"
 
 type ConcolicBool struct {
 	Value 	bool
-	z3Expr 	z3.Bool
+	Z3Expr 	z3.Bool
 }
 
-func MakeConcolicBoolVar(cv *ConcreteValues, name string) ConcolicBool {
-	return ConcolicBool{Value: cv.GetBoolValue(name), z3Expr: ctx.BoolConst(name)}
+func MakeConcolicBoolVar(name string) ConcolicBool {
+	return ConcolicBool{Value: concreteValuesGlobal.GetBoolValue(name), Z3Expr: ctx.BoolConst(name)}
 }
 
 func MakeConcolicBoolConst(value bool) ConcolicBool {
-	return ConcolicBool{Value: value, z3Expr: ctx.FromBool(value)}
+	return ConcolicBool{Value: value, Z3Expr: ctx.FromBool(value)}
 }
 
 // ================= UNOPS =================
 
 func (self ConcolicBool) ConcBoolNot() ConcolicBool {
-	return ConcolicBool{Value: !self.Value, z3Expr: self.z3Expr.Not()}
+	return ConcolicBool{Value: !self.Value, Z3Expr: self.Z3Expr.Not()}
 }
 
 // ================= BINOPS =================
 
 func ConcBoolBinopToBool(concreteFunc func(a, b bool) bool, z3Func func(az, bz z3.Bool) z3.Bool, ac, bc ConcolicBool) ConcolicBool {
 	res := concreteFunc(ac.Value, bc.Value)
-	sym := z3Func(ac.z3Expr, bc.z3Expr)
-	return ConcolicBool{Value: res, z3Expr: sym}
+	sym := z3Func(ac.Z3Expr, bc.Z3Expr)
+	return ConcolicBool{Value: res, Z3Expr: sym}
 }
 
 func (self ConcolicBool) ConcBoolEq(other ConcolicBool) ConcolicBool {

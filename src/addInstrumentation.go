@@ -13,6 +13,16 @@ func addInstrumentationPre(curNode *astutil.Cursor) bool {
 }
 
 func addInstrumentationPost(curNode *astutil.Cursor) bool {
+	// TODO dead code delete
+	// bruh:
+	// 	if len(queueOfThings.stage2.parentParent) > 0 {
+	// 		if curNode.Node() == queueOfThings.stage2.parentParent[len(queueOfThings.stage2.parentParent)-1] {
+	// 			curNode.InsertAfter(queueOfThings.stage2.stmts[len(queueOfThings.stage2.stmts)-1])
+	// 			queueOfThings.stage2.Pop(len(queueOfThings.stage2.stmts))
+	// 			goto bruh
+	// 		}
+	// 	}
+	exerciseQueueThing(curNode)
 	// fmt.Println(reflect.TypeOf(curNode.Node()))
 	switch curNode.Node().(type) {
 	// the idea is to find a binary expression

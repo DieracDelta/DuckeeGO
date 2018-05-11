@@ -343,45 +343,42 @@ func instrumentIfStmt(curNode *astutil.Cursor) {
 
 func instrumentFuncDecl(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.FuncDecl)
-	castedNode.Recv = &ast.FieldList{
-		List: []*ast.Field{
-			&ast.Field{
-				Names: []*ast.Ident{
-					&ast.Ident{
-						Name: "h",
-					},
-				},
-				Type: &ast.Ident{
-					Name: "Handler",
-				},
-			},
-		},
+	// don't instrument main (I'm assuming main *could* have args)
+	// just being safe
+	if castedNode.Name.Name == "main" {
+		instrumentMainMethod(curNode)
+		return
 	}
+
 	castedType := castedNode.Type
 
 	for _, aParam := range castedType.Params.List {
-		// theType := aParam.Type.(*ast.Ident).Name
 		for _, aName := range aParam.Names {
+			// supposed to look like
 			// i = makeConcolicIntVar(cv, "i")
-			var randoType string
+			var methodPiece string
 			switch aParam.Type.(*ast.Ident).Name {
 			case "string":
 				fallthrough
 			case "concolicTypes.ConcolicString":
-				randoType = "String"
+				methodPiece = "String"
 			case "int":
 				fallthrough
 			case "concolicTypes.ConcolicInt":
-				randoType = "Int"
+				methodPiece = "Int"
 			case "bool":
 				fallthrough
 			case "concolicTypes.ConcolicBool":
-				randoType = "Bool"
+				methodPiece = "Bool"
 			default:
 				fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
-				panic("WE DON'T SUPPORT THIS TYPE!")
+				// fmt.("WE DON'T SUPPORT THIS TYPE!")
+				// if the type is wrong, it's all wrong, so move onto next parameter
+				break
 
 			}
+			// TODO add in concolic constructors before the _ thingies
+			// add "_ = y" for example
 			newNode2 := ast.AssignStmt{
 				Lhs: []ast.Expr{
 					&ast.Ident{
@@ -396,6 +393,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 				},
 			}
 			castedNode.Body.List = append([]ast.Stmt{&newNode2}, castedNode.Body.List...)
+
 			newNode := ast.AssignStmt{
 				Lhs: []ast.Expr{
 					&ast.Ident{
@@ -406,7 +404,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 				Rhs: []ast.Expr{
 					&ast.CallExpr{
 						Fun: &ast.Ident{
-							Name: "concolicTypes.MakeConcolic" + randoType + "Var",
+							Name: "concolicTypes.MakeConcolic" + methodPiece + "Var",
 						},
 						Args: []ast.Expr{
 							&ast.Ident{
@@ -421,6 +419,8 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 			}
 			castedNode.Body.List = append([]ast.Stmt{&newNode}, castedNode.Body.List...)
 
+			// set each parameter to a different Name
+			aName.Name = aName.Name + "Val"
 		}
 
 	}
@@ -449,4 +449,24 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 		},
 	}
 	castedType.Params.List = newFuncArgs
+}
+
+// add in a handler here and rename the method
+func instrumentMainMethod(curNode *astutil.Cursor) {
+	castedNode := curNode.Node().(*ast.FuncDecl)
+	castedNode.Recv = &ast.FieldList{
+		List: []*ast.Field{
+			&ast.Field{
+				Names: []*ast.Ident{
+					&ast.Ident{
+						Name: "h",
+					},
+				},
+				Type: &ast.Ident{
+					Name: "Handler",
+				},
+			},
+		},
+	}
+	castedNode.Name.Name = "instrumentedMainMethod"
 }

@@ -24,10 +24,10 @@ type queueThing struct {
 	stage2 stage2
 }
 
-// TODO fix the borken things
-func (self *stage1) Pop(i int) int {
+// TODO fix the broken things
+func (self *stage1) Pop(i int) ast.Node {
 	// TODO better bounds checking
-	rVal := self.parent[i]
+	rVal := self.stmts[i]
 	self.parent = append(self.parent[0:i], self.parent[i+1:]...)
 	self.stmts = append(self.stmts[0:i], self.stmts[i+1:]...)
 	return rVal
@@ -40,26 +40,27 @@ func (self *stage1) Push(parID int, stmt ast.Node) {
 
 func (self *stage2) Pop(i int) ast.Node {
 	rVal := self.stmts[i]
-	Self.parentParent = append(self.parentParent[0:i], self.parentParent[i+1:]...)
+	self.parentParent = append(self.parentParent[0:i], self.parentParent[i+1:]...)
 	self.stmts = append(self.stmts[0:i], self.stmts[i+1:]...)
 	return rVal
 }
 
-func (self *stage2) Push(n ast.Node, stmt ast.Node) {
-	self.parentParent = append(self.parentParent, n)
+func (self *stage2) Push(parparID int, stmt ast.Node) {
+	self.parentParent = append(self.parentParent, parparID)
 	self.stmts = append(self.stmts, stmt)
 }
 
 var queueOfThings queueThing
 
 func updateQueueThing(curNode *astutil.Cursor) {
-	curPar := curNode.Node()
+	// curPar := curNode.Node()
 	// curNodePar := curNode.Parent()
 	for i, ele := range queueOfThings.stage1.parent {
-		if astutil.NodeDescription(curPar) == astutil.NodeDescription(ele) {
+		if curNode.Node().GetId().Id == ele {
 			fmt.Printf("HI BOI\r\n")
 			stmt := queueOfThings.stage1.Pop(i)
-			queueOfThings.stage2.Push(curNode.Parent(), stmt)
+			hi := curNode.Parent().GetId().Id
+			queueOfThings.stage2.Push(hi, stmt)
 		}
 	}
 }
@@ -67,7 +68,7 @@ func updateQueueThing(curNode *astutil.Cursor) {
 func exerciseQueueThing(curNode *astutil.Cursor) {
 	curPar := curNode.Node()
 	for i, ele := range queueOfThings.stage2.parentParent {
-		if astutil.NodeDescription(curPar) == astutil.NodeDescription(ele) {
+		if curPar.GetId().Id == ele {
 			fmt.Printf("HI BOI 2\r\n")
 			curNode.InsertAfter(queueOfThings.stage2.Pop(i))
 		}
@@ -874,7 +875,7 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor) {
 		}
 		nextNode.List = append(nextNode.List, ifStmnt)
 
-		queueOfThings.stage1.Push(curNode.Parent(), nextNode)
+		queueOfThings.stage1.Push(curNode.Parent().GetId().Id, nextNode)
 
 		// pre := func(curNode *astutil.Cursor) bool {
 		// 	return true

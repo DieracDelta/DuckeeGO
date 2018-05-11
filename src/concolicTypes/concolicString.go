@@ -15,9 +15,8 @@ func StringToBigInt(s string) *big.Int {
 	return bigRep
 }
 
-func StringToZ3BV(s string) {
-	return StringToBigInt(s)
-
+func StringToZ3BV(s string) z3.BV {
+	return ctx.FromBigInt(StringToBigInt(s), ctx.BVSort(StringToBVLen(s))).(z3.BV)
 }
 
 func StringToBVLen(s string) int {
@@ -28,14 +27,14 @@ func MakeConcolicStringVar(cv *ConcreteValues, name string) ConcolicString {
 	value := cv.getStringValue(name)
 
 	return ConcolicString{
-		Value: value,
-		Sym:   ctx.BVConst(name, StringToBVLen(value))}
+		Value:  value,
+		Z3Expr: ctx.BVConst(name, StringToBVLen(value))}
 }
 
 func MakeConcolicStringConst(value string) ConcolicString {
 	return ConcolicString{
-		Value: value,
-		Sym:   ctx.FromBigInt(StringToBigInt(value), ctx.BVSort(StringToBVLen(value))).(z3.BV)}
+		Value:  value,
+		Z3Expr: ctx.FromBigInt(StringToBigInt(value), ctx.BVSort(StringToBVLen(value))).(z3.BV)}
 }
 
 // ================= UNOPS =================

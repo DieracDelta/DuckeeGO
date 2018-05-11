@@ -355,7 +355,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 	poppedStatement := &ast.ExprStmt{
 		X: &ast.CallExpr{
 			Fun: &ast.Ident{
-				Name: "concolicTypes.SymStack.SetArgsPopped",
+				Name: "symStack.SetArgsPopped",
 			},
 		},
 	}
@@ -444,7 +444,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 								Name: aName.Name,
 							},
 							&ast.Ident{
-								Name: "concolicTypes.SymStack.PopArg().(z3." + methodPiece + ")",
+								Name: "symStack.PopArg().(z3." + methodPiece + ")",
 							},
 						},
 					},
@@ -453,7 +453,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 			castedNode.Body.List = append([]ast.Stmt{&newNode}, castedNode.Body.List...)
 
 			// set each parameter to a different Name
-			aName.Name = aName.Name + "Val"
+			// aName.Name = aName.Name + "Val"
 		}
 	}
 	// example:
@@ -530,7 +530,7 @@ func instrumentCallExpr(curNode *astutil.Cursor) {
 								&ast.ExprStmt{
 									X: &ast.CallExpr{
 										Fun: &ast.Ident{
-											Name: "concolicTypes.SymStack.PushArg",
+											Name: "symStack.PushArg",
 										},
 										Args: []ast.Expr{
 											&ast.Ident{
@@ -540,7 +540,7 @@ func instrumentCallExpr(curNode *astutil.Cursor) {
 									},
 								},
 							}, newNode.Fun.(*ast.FuncLit).Body.List...)
-						aNameNode.Name += "Val"
+						// aNameNode.Name += "Val"
 						// TODO might fuck some things up
 						aNameNode.Obj = nil
 					}
@@ -560,7 +560,7 @@ func instrumentCallExpr(curNode *astutil.Cursor) {
 			newNode.Fun.(*ast.FuncLit).Body.List = append(
 				[]ast.Stmt{&ast.ExprStmt{
 					X: &ast.CallExpr{
-						Fun: &ast.Ident{Name: "concolicTypes.SymStack.SetArgsPushed"},
+						Fun: &ast.Ident{Name: "symStack.SetArgsPushed"},
 					},
 				},
 				},
@@ -636,7 +636,7 @@ func instrumentReturnStmt(curNode *astutil.Cursor) {
 				&ast.ExprStmt{
 					X: &ast.CallExpr{
 						Fun: &ast.Ident{
-							Name: "concolicTypes.SymStack.PushReturn",
+							Name: "symStack.PushReturn",
 						},
 						// TODO add all arguments
 						// TODO enable type checking for return

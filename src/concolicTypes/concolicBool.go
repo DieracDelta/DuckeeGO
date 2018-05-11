@@ -3,30 +3,30 @@ package concolicTypes
 import "github.com/aclements/go-z3/z3"
 
 type ConcolicBool struct {
-	Value bool
-	Sym   z3.Bool
+	Value 	bool
+	Z3Expr  z3.Bool
 }
 
 func MakeConcolicBoolVar(cv *ConcreteValues, name string) ConcolicBool {
-	return ConcolicBool{Value: cv.GetBoolValue(name), Sym: ctx.BoolConst(name)}
+	return ConcolicBool{Value: cv.GetBoolValue(name), Z3Expr: ctx.BoolConst(name)}
 }
 
 func MakeConcolicBoolConst(value bool) ConcolicBool {
-	return ConcolicBool{Value: value, Sym: ctx.FromBool(value)}
+	return ConcolicBool{Value: value, Z3Expr: ctx.FromBool(value)}
 }
 
 // ================= UNOPS =================
 
 func (self ConcolicBool) ConcBoolNot() ConcolicBool {
-	return ConcolicBool{Value: !self.Value, Sym: self.Sym.Not()}
+	return ConcolicBool{Value: !self.Value, Z3Expr: self.Z3Expr.Not()}
 }
 
 // ================= BINOPS =================
 
 func ConcBoolBinopToBool(concreteFunc func(a, b bool) bool, z3Func func(az, bz z3.Bool) z3.Bool, ac, bc ConcolicBool) ConcolicBool {
 	res := concreteFunc(ac.Value, bc.Value)
-	sym := z3Func(ac.Sym, bc.Sym)
-	return ConcolicBool{Value: res, Sym: sym}
+	sym := z3Func(ac.Z3Expr, bc.Z3Expr)
+	return ConcolicBool{Value: res, Z3Expr: sym}
 }
 
 // TODO not equal

@@ -1,7 +1,8 @@
 package main
 
 // import "golang.org/x/tools/go/ast/astutil"
-import "go/ast"
+//import "go/ast"
+import "github.com/DieracDelta/ast"
 
 type ConfigData struct {
 	ConfigData  []GoFile `json:"Data"`

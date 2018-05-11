@@ -2,14 +2,16 @@ package main
 
 import (
 	// for rewriting
-	"go/ast"
-	"golang.org/x/tools/go/ast/astutil"
+	//"go/ast"
+  ast "github.com/DieracDelta/ast"
+	//"golang.org/x/tools/go/ast/duckastutil"
+  duckastutil "github.com/DieracDelta/duckastutil"
 	// "reflect"
 )
 
 var nodeNumber = 0
 
-func addInstrumentationPre(curNode *astutil.Cursor) bool {
+func addInstrumentationPre(curNode *duckastutil.Cursor) bool {
 	newId := ast.AstId{Id: nodeNumber}
 	ast.BinaryExpr
 	pointer := curNode.Node().GetId()
@@ -19,7 +21,7 @@ func addInstrumentationPre(curNode *astutil.Cursor) bool {
 	return true
 }
 
-func addInstrumentationPost(curNode *astutil.Cursor) bool {
+func addInstrumentationPost(curNode *duckastutil.Cursor) bool {
 	// TODO dead code delete
 	// bruh:
 	// 	if len(queueOfThings.stage2.parentParent) > 0 {

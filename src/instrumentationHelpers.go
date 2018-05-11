@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	// for rewriting
-	"go/ast"
+	//"go/ast"
+  ast "github.com/DieracDelta/ast"
 	"go/token"
-	"golang.org/x/tools/go/ast/astutil"
+	//"golang.org/x/tools/go/ast/duckastutil"
+  duckastutil "github.com/DieracDelta/duckastutil"
 	// "reflect"
 )
 
@@ -52,7 +54,7 @@ func (self *stage2) Push(parparID int, stmt ast.Node) {
 
 var queueOfThings queueThing
 
-func updateQueueThing(curNode *astutil.Cursor) {
+func updateQueueThing(curNode *duckastutil.Cursor) {
 	// curPar := curNode.Node()
 	// curNodePar := curNode.Parent()
 	for i, ele := range queueOfThings.stage1.parent {
@@ -65,7 +67,7 @@ func updateQueueThing(curNode *astutil.Cursor) {
 	}
 }
 
-func exerciseQueueThing(curNode *astutil.Cursor) {
+func exerciseQueueThing(curNode *duckastutil.Cursor) {
 	curPar := curNode.Node()
 	for i, ele := range queueOfThings.stage2.parentParent {
 		if curPar.GetId().Id == ele {
@@ -75,7 +77,7 @@ func exerciseQueueThing(curNode *astutil.Cursor) {
 	}
 }
 
-func instrumentBinaryExpr(curNode *astutil.Cursor) {
+func instrumentBinaryExpr(curNode *duckastutil.Cursor) {
 	castedNode := curNode.Node().(*ast.BinaryExpr)
 
 	// TODO add switch to determine the function you use
@@ -140,7 +142,7 @@ func instrumentBinaryExpr(curNode *astutil.Cursor) {
 	curNode.Replace(&replacementNode)
 }
 
-func instrumentUnaryExpr(curNode *astutil.Cursor) {
+func instrumentUnaryExpr(curNode *duckastutil.Cursor) {
 	// ! on bools is the only case I can think of
 	castedNode := curNode.Node().(*ast.UnaryExpr)
 	switch castedNode.Op {
@@ -167,7 +169,7 @@ func instrumentUnaryExpr(curNode *astutil.Cursor) {
 	}
 }
 
-func instrumentBasicLit(curNode *astutil.Cursor) {
+func instrumentBasicLit(curNode *duckastutil.Cursor) {
 	castedNode := curNode.Node().(*ast.BasicLit)
 	if castedNode.Kind == token.INT {
 		identifier := getIdentifier(curNode)
@@ -203,7 +205,7 @@ func instrumentBasicLit(curNode *astutil.Cursor) {
 	}
 }
 
-func instrumentAssignStmt(curNode *astutil.Cursor) {
+func instrumentAssignStmt(curNode *duckastutil.Cursor) {
 	castedNode := curNode.Node().(*ast.AssignStmt)
 
 	addedNode := &ast.Ident{
@@ -254,7 +256,7 @@ func instrumentAssignStmt(curNode *astutil.Cursor) {
 	curNode.Replace(&replacementNode)
 }
 
-func instrumentIncDecStmt(curNode *astutil.Cursor) {
+func instrumentIncDecStmt(curNode *duckastutil.Cursor) {
 	castedNode := curNode.Node().(*ast.IncDecStmt)
 	addedNode := &ast.Ident{
 		Name: "",
@@ -294,7 +296,7 @@ func instrumentIncDecStmt(curNode *astutil.Cursor) {
 	curNode.Replace(&replacementNode)
 }
 
-func instrumentIdent(curNode *astutil.Cursor) {
+func instrumentIdent(curNode *duckastutil.Cursor) {
 	castedNode := curNode.Node().(*ast.Ident)
 	var varOrConst, concType string
 	switch castedNode.Name {
@@ -337,7 +339,7 @@ func instrumentIdent(curNode *astutil.Cursor) {
 
 }
 
-func instrumentIfStmt(curNode *astutil.Cursor) {
+func instrumentIfStmt(curNode *duckastutil.Cursor) {
 	castedNode := curNode.Node().(*ast.IfStmt)
 	cond := castedNode.Cond
 	castedNode.Cond = &ast.SelectorExpr{
@@ -408,7 +410,7 @@ func instrumentIfStmt(curNode *astutil.Cursor) {
 	}
 }
 
-func instrumentFuncDecl(curNode *astutil.Cursor) {
+func instrumentFuncDecl(curNode *duckastutil.Cursor) {
 	castedNode := curNode.Node().(*ast.FuncDecl)
 	// don't instrument main (I'm assuming main *could* have args)
 	// just being safe
@@ -552,7 +554,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 	// castedType.Params.List = newFuncArgs
 }
 
-func instrumentCallExpr(curNode *astutil.Cursor) {
+func instrumentCallExpr(curNode *duckastutil.Cursor) {
 	castedNode := curNode.Node().(*ast.CallExpr)
 	switch castedNode.Fun.(type) {
 	case *ast.Ident:
@@ -689,7 +691,7 @@ func instrumentCallExpr(curNode *astutil.Cursor) {
 
 }
 
-func instrumentReturnStmt(curNode *astutil.Cursor) {
+func instrumentReturnStmt(curNode *duckastutil.Cursor) {
 	castedNode := curNode.Node().(*ast.ReturnStmt)
 	newNode := &ast.BlockStmt{
 		List: []ast.Stmt{
@@ -730,7 +732,7 @@ func instrumentReturnStmt(curNode *astutil.Cursor) {
 }
 
 // add in a handler here and rename the method
-func instrumentMainMethod(curNode *astutil.Cursor) {
+func instrumentMainMethod(curNode *duckastutil.Cursor) {
 	castedNode := curNode.Node().(*ast.FuncDecl)
 	castedNode.Recv = &ast.FieldList{
 		List: []*ast.Field{
@@ -749,7 +751,7 @@ func instrumentMainMethod(curNode *astutil.Cursor) {
 	castedNode.Name.Name = "instrumentedMainMethod"
 }
 
-func instrumentParentOfCallExpr(curNode *astutil.Cursor) {
+func instrumentParentOfCallExpr(curNode *duckastutil.Cursor) {
 	// castedNode := curNode.Node().(*ast.CallExpr)
 	parentNode := curNode.Parent()
 	switch parentNode.(type) {
@@ -877,14 +879,14 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor) {
 
 		queueOfThings.stage1.Push(curNode.Parent().GetId().Id, nextNode)
 
-		// pre := func(curNode *astutil.Cursor) bool {
+		// pre := func(curNode *duckastutil.Cursor) bool {
 		// 	return true
 		// }
 
 		// bruh := true
 		// castedParentNode. = nextNode
 
-		// post := func(cn *astutil.Cursor) bool {
+		// post := func(cn *duckastutil.Cursor) bool {
 		// 	if cn.Node() == parentNode {
 		// 		// doesn't traverse childrens so we gucci
 		// 		// TODO . replace
@@ -894,7 +896,7 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor) {
 		// 	}
 		// 	return true
 		// }
-		// astutil.Apply(parentNode, nil, astutil.ApplyFunc(post))
+		// duckastutil.Apply(parentNode, nil, duckastutil.ApplyFunc(post))
 		// TODO
 	default:
 		return

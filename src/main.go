@@ -25,11 +25,13 @@ import (
 	// for rewriting
 	"bytes"
 	"encoding/json"
-	"go/ast"
+	//"go/ast"
+  ast "github.com/DieracDelta/ast"
 	"go/parser"
 	"go/printer"
 	"go/token"
-	"golang.org/x/tools/go/ast/astutil"
+	//"golang.org/x/tools/go/ast/duckastutil"
+  duckastutil "github.com/DieracDelta/duckastutil"
 	// "reflect"
 )
 
@@ -90,13 +92,13 @@ func main() {
 			panic(err)
 		}
 
-		astutil.AddImport(fset, uninstrumentedAST, "concolicTypes")
-		astutil.AddImport(fset, uninstrumentedAST, "github.com/aclements/go-z3/z3")
+		duckastutil.AddImport(fset, uninstrumentedAST, "concolicTypes")
+		duckastutil.AddImport(fset, uninstrumentedAST, "github.com/aclements/go-z3/z3")
 
 		if VERBOSE {
 			_ = ast.Print(fset, uninstrumentedAST)
 		}
-		instrumentedAST := astutil.Apply(uninstrumentedAST, astutil.ApplyFunc(addInstrumentationPre), astutil.ApplyFunc(addInstrumentationPost))
+		instrumentedAST := duckastutil.Apply(uninstrumentedAST, duckastutil.ApplyFunc(addInstrumentationPre), duckastutil.ApplyFunc(addInstrumentationPost))
 
 		if VERBOSE {
 			_ = ast.Print(fset, instrumentedAST)
@@ -132,8 +134,8 @@ func main() {
 	fset := token.NewFileSet()
 	var buf bytes.Buffer
 	mainFile := constructMain(configData)
-	astutil.AddImport(fset, mainFile, "reflect")
-	astutil.AddImport(fset, mainFile, "concolicTypes")
+	duckastutil.AddImport(fset, mainFile, "reflect")
+	duckastutil.AddImport(fset, mainFile, "concolicTypes")
 	err = printer.Fprint(&buf, fset, mainFile)
 	if err != nil {
 		panic(err)
@@ -335,7 +337,7 @@ func containsIntType(curNode *ast.Node) bool {
 	}
 }
 
-func getIdentifier(curNode *astutil.Cursor) string {
+func getIdentifier(curNode *duckastutil.Cursor) string {
 	index := curNode.Index()
 	parentNode := curNode.Parent()
 	switch parentNode.(type) {

@@ -43,11 +43,11 @@ func MakeConcolicStringConst(value string) ConcolicString {
 
 // // TODO not equal
 
-func (self ConcolicString) ConcEq(other ConcolicString) ConcolicString {
-	// eq := func(a, b bool) bool { return a == b }
-	// eqZ3 := func(az, bz z3.Bool) z3.Bool { return az.Eq(bz) }
-	// return ConcBoolBinopToBool(eq, eqZ3, self, other)
-}
+// func (self ConcolicString) ConcEq(other ConcolicString) ConcolicString {
+// 	// eq := func(a, b bool) bool { return a == b }
+// 	// eqZ3 := func(az, bz z3.Bool) z3.Bool { return az.Eq(bz) }
+// 	// return ConcBoolBinopToBool(eq, eqZ3, self, other)
+// }
 
 // func (self ConcolicBool) ConcBoolAnd(other ConcolicBool) ConcolicBool {
 // 	and := func(a, b bool) bool { return a && b }

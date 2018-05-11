@@ -64,7 +64,7 @@ func (self ConcolicInt) ConcIntGE(other ConcolicInt) ConcolicBool {
 func ConcIntBinopToInt(concreteFunc func(a, b int) int, z3Func func(az, bz z3.Int) z3.Int, ac, bc ConcolicInt) ConcolicInt {
 	res := concreteFunc(ac.Value, bc.Value)
 	sym := z3Func(ac.Z3Expr, bc.Z3Expr)
-	return ConcolicInt{Value: res, z3Expr: sym}
+	return ConcolicInt{Value: res, Z3Expr: sym}
 }
 
 func (self ConcolicInt) ConcIntAdd(other ConcolicInt) ConcolicInt {
@@ -102,7 +102,7 @@ func (self ConcolicInt) ConcIntMod(other ConcolicInt) ConcolicInt {
 func (self ConcolicInt) ConcIntNot() ConcolicInt {
 	res := ^self.Value
 	sym := self.Z3Expr.ToBV(64).Not().SToInt()
-	return ConcolicInt{Value: res, z3Expr: sym}
+	return ConcolicInt{Value: res, Z3Expr: sym}
 }
 
 // ================= BINOPS BIT OPS RETURNING INTS =================

@@ -16,6 +16,7 @@ func main() {
 import (
 	"github.com/otiai10/copy"
 	"os"
+	"strings"
 
 	"fmt"
 
@@ -87,12 +88,20 @@ func main() {
 		}
 		instrumentedAST := astutil.Apply(uninstrumentedAST, astutil.ApplyFunc(addInstrumentationPre), astutil.ApplyFunc(addInstrumentationPost))
 
+		if VERBOSE {
+			_ = ast.Print(fset, instrumentedAST)
+		}
 		var buf bytes.Buffer
 		err = printer.Fprint(&buf, fset, instrumentedAST)
 		if err != nil {
 			panic(err)
 		}
 		// fmt.Println(buf.String())
+		if strings.Contains(aGoFile.FilePath, "main") {
+
+			aGoFile.FilePath = strings.Replace(aGoFile.FilePath, "main", "userMain", 1)
+
+		}
 		_ = os.Remove(DEST + aGoFile.FilePath)
 		tmpFile, _ := os.Create(DEST + aGoFile.FilePath)
 		_, _ = tmpFile.WriteString(buf.String())

@@ -36,6 +36,10 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		instrumentIfStmt(curNode)
 	case *ast.FuncDecl:
 		instrumentFuncDecl(curNode)
+	case *ast.CallExpr:
+		instrumentCallExpr(curNode)
+	case *ast.ReturnStmt:
+		instrumentReturnStmt(curNode)
 	default:
 		// TODO do nothing
 	}

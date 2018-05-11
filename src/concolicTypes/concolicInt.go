@@ -3,8 +3,8 @@ package concolicTypes
 import "github.com/aclements/go-z3/z3"
 
 type ConcolicInt struct {
-	Value 	int
-	Z3Expr  z3.Int
+	Value  int
+	Z3Expr z3.Int
 }
 
 func MakeConcolicIntVar(name string) ConcolicInt {
@@ -104,23 +104,17 @@ func (self ConcolicInt) ConcIntMod(other ConcolicInt) ConcolicInt {
 // ================= UNOP BIT OPS RETURNING INTS =================
 
 func (self ConcolicInt) ConcIntNot() ConcolicInt {
-<<<<<<< HEAD
-  res := ^self.Value
-  sym := self.Z3Expr.ToBV(64).Not().SToInt()
-  return ConcolicInt{Value: res, Z3Expr: sym}
-=======
 	res := ^self.Value
 	sym := self.Z3Expr.ToBV(64).Not().SToInt()
 	return ConcolicInt{Value: res, Z3Expr: sym}
->>>>>>> b4590035d56b5cede85a11df157050598df363f4
 }
 
 // ================= BINOPS BIT OPS RETURNING INTS =================
 
 func ConcIntBitBinop(concreteFunc func(a, b int) int, z3Func func(az, bz z3.BV) z3.BV, ac, bc ConcolicInt) ConcolicInt {
-  res := concreteFunc(ac.Value, bc.Value)
-  sym := z3Func(ac.Z3Expr.ToBV(64), bc.Z3Expr.ToBV(64)).SToInt()
-  return ConcolicInt{Value: res, Z3Expr: sym}
+	res := concreteFunc(ac.Value, bc.Value)
+	sym := z3Func(ac.Z3Expr.ToBV(64), bc.Z3Expr.ToBV(64)).SToInt()
+	return ConcolicInt{Value: res, Z3Expr: sym}
 }
 
 func (self ConcolicInt) ConcIntAnd(other ConcolicInt) ConcolicInt {

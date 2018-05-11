@@ -5,10 +5,10 @@ import "reflect"
 import "github.com/aclements/go-z3/z3"
 import "gitlab.com/mgmap/maps"
 
-var ctx 										*z3.Context
-var concreteValuesGlobal		*ConcreteValues
-var currPathConstrsGlobal 	*[]z3.Bool
-var symStack								*SymbolicStack
+var ctx *z3.Context
+var concreteValuesGlobal *ConcreteValues
+var currPathConstrsGlobal *[]z3.Bool
+var symStack *SymbolicStack
 
 func MakeFuzzyInt(name string, a int) int {
 	return a
@@ -115,9 +115,12 @@ func AddNegativePathConstr(constr z3.Bool) {
 
 type Handler struct{}
 
+// an example instrumented function
 func rubberducky(iVal int, jVal int) int {
 	i := MakeConcolicInt(iVal, symStack.PopArg().(z3.Int))
+	_ = i
 	j := MakeConcolicInt(jVal, symStack.PopArg().(z3.Int))
+	_ = j
 	symStack.SetArgsPopped()
 
 	k := i.ConcIntAdd(j)
@@ -133,8 +136,6 @@ func rubberducky(iVal int, jVal int) int {
 		} else {
 			AddNegativePathConstr(i.ConcIntNE(j).Z3Expr)
 			fmt.Printf("pretty")
-
-
 
 			fmt.Println(" mean")
 
@@ -165,12 +166,16 @@ func rubberducky(iVal int, jVal int) int {
 
 func (h Handler) Main() {
 	i := MakeConcolicIntVar("i")
+	_ = i
 	j := MakeConcolicIntConst(3)
+	_ = j
 
-	symStack.PushArg(j.Z3Expr)
-	symStack.PushArg(i.Z3Expr)
-	symStack.SetArgsPushed()
-	zVal := rubberducky(i.Value, j.Value)
+	zVal := func() int {
+		symStack.PushArg(j.Z3Expr)
+		symStack.PushArg(i.Z3Expr)
+		symStack.SetArgsPushed()
+		return rubberducky(i.Value, j.Value)
+	}()
 	var z ConcolicInt
 	if symStack.AreArgsPushed() {
 		z = MakeConcolicIntConst(zVal)

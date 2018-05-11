@@ -116,9 +116,9 @@ func instrumentBasicLit(curNode *astutil.Cursor) {
 		} else {
 			varOrConst = "Var"
 			theArgs = []ast.Expr{
-				&ast.Ident{
-					Name: "cv",
-				},
+				// &ast.Ident{
+				// 	Name: "cv",
+				// },
 				&ast.Ident{
 					Name: "\"" + identifier + "\"",
 				},
@@ -139,6 +139,7 @@ func instrumentBasicLit(curNode *astutil.Cursor) {
 
 func instrumentAssignStmt(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.AssignStmt)
+
 	addedNode := &ast.Ident{
 		Name: "",
 	}
@@ -249,9 +250,9 @@ func instrumentIdent(curNode *astutil.Cursor) {
 		} else {
 			varOrConst = "Var"
 			theArgs = []ast.Expr{
-				&ast.Ident{
-					Name: "cv",
-				},
+				// &ast.Ident{
+				// 	Name: "cv",
+				// },
 				&ast.Ident{
 					Name: "\"" + identifier + "\"",
 				},
@@ -293,10 +294,10 @@ func instrumentIfStmt(curNode *astutil.Cursor) {
 						},
 					},
 					Args: []ast.Expr{
-						&ast.BasicLit{
-							Kind:  token.STRING,
-							Value: "currPathConstrs",
-						},
+						// &ast.BasicLit{
+						// 	Kind:  token.STRING,
+						// 	Value: "currPathConstrs",
+						// },
 						&ast.SelectorExpr{
 							X: cond,
 							Sel: &ast.Ident{
@@ -322,10 +323,10 @@ func instrumentIfStmt(curNode *astutil.Cursor) {
 							},
 						},
 						Args: []ast.Expr{
-							&ast.BasicLit{
-								Kind:  token.STRING,
-								Value: "currPathConstrs",
-							},
+							// &ast.BasicLit{
+							// 	Kind:  token.STRING,
+							// 	Value: "currPathConstrs",
+							// },
 							&ast.SelectorExpr{
 								X: cond,
 								Sel: &ast.Ident{
@@ -350,16 +351,48 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 		return
 	}
 
+	// add setargspopped statement right after all vars do their thing
+	poppedStatement := &ast.ExprStmt{
+		X: &ast.CallExpr{
+			Fun: &ast.Ident{
+				Name: "concolicTypes.SymStack.SetArgsPopped",
+			},
+		},
+	}
+	castedNode.Body.List = append([]ast.Stmt{poppedStatement}, castedNode.Body.List...)
+
 	castedType := castedNode.Type
 
-	for _, aParam := range castedType.Params.List {
-		for _, aName := range aParam.Names {
+	for _, aParam := range castedType.Results.List {
+		// supposed to look like
+		// i = makeConcolicIntVar(cv, "i")
+		switch aParam.Type.(*ast.Ident).Name {
+		case "concolicTypes.ConcolicString":
+			aParam.Type = &ast.Ident{Name: "string"}
+		case "concolicTypes.ConcolicInt":
+			aParam.Type = &ast.Ident{Name: "int"}
+		case "concolicTypes.ConcolicBool":
+			aParam.Type = &ast.Ident{Name: "bool"}
+		default:
+			fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
+			// fmt.("WE DON'T SUPPORT THIS TYPE!")
+			// if the type is wrong, it's all wrong, so move onto next parameter
+			break
+
+		}
+	}
+
+	for index1, aParam := range castedType.Params.List {
+		aParam = castedType.Params.List[len(castedType.Params.List)-1-index1]
+		for index2, aName := range aParam.Names {
+			aName = aParam.Names[len(aParam.Names)-1-index2]
 			// supposed to look like
 			// i = makeConcolicIntVar(cv, "i")
 			var methodPiece string
 			switch aParam.Type.(*ast.Ident).Name {
 			case "string":
 				fallthrough
+				// TODO does this support string correctly
 			case "concolicTypes.ConcolicString":
 				methodPiece = "String"
 			case "int":
@@ -404,14 +437,14 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 				Rhs: []ast.Expr{
 					&ast.CallExpr{
 						Fun: &ast.Ident{
-							Name: "concolicTypes.MakeConcolic" + methodPiece + "Var",
+							Name: "concolicTypes.MakeConcolic" + methodPiece,
 						},
 						Args: []ast.Expr{
 							&ast.Ident{
-								Name: "cv",
+								Name: aName.Name,
 							},
 							&ast.Ident{
-								Name: "\"" + aName.Name + "\"",
+								Name: "concolicTypes.SymStack.PopArg().(z3." + methodPiece + ")",
 							},
 						},
 					},
@@ -422,33 +455,204 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 			// set each parameter to a different Name
 			aName.Name = aName.Name + "Val"
 		}
-
 	}
 	// example:
 	// ruckkerduck( vw * ConcreteValues, curPathConstrs []z3.Bool)
-	newFuncArgs := []*ast.Field{
-		&ast.Field{
-			Names: []*ast.Ident{
-				&ast.Ident{
-					Name: "cv",
+
+	// replacing argument values
+
+	// newFuncArgs := []*ast.Field{
+	// 	&ast.Field{
+	// 		Names: []*ast.Ident{
+	// 			&ast.Ident{
+	// 				Name: "cv",
+	// 			},
+	// 		},
+	// 		Type: &ast.Ident{
+	// 			Name: "* concolicTypes.ConcreteValues",
+	// 		},
+	// 	},
+	// 	&ast.Field{
+	// 		Names: []*ast.Ident{
+	// 			&ast.Ident{
+	// 				Name: "currPathConstrs",
+	// 			},
+	// 		},
+	// 		Type: &ast.Ident{
+	// 			Name: "*[]z3.Bool",
+	// 		},
+	// 	},
+	// }
+	// castedType.Params.List = newFuncArgs
+}
+
+func instrumentCallExpr(curNode *astutil.Cursor) {
+	castedNode := curNode.Node().(*ast.CallExpr)
+	switch castedNode.Fun.(type) {
+	case *ast.Ident:
+		if castedNode.Fun == nil || castedNode.Fun.(*ast.Ident).Obj == nil || castedNode.Fun.(*ast.Ident).Obj.Decl == nil {
+
+			break
+		}
+		objectified := castedNode.Fun.(*ast.Ident).Obj.Decl.(*ast.FuncDecl)
+
+		var objectifiedNode *ast.FieldList
+		if objectified != nil && objectified.Type != nil {
+			objectifiedNode = objectified.Type.Results
+		} else {
+			objectified = nil
+		}
+		fmt.Printf("SHISTSHITSHTI")
+		ast.Print(token.NewFileSet(), objectifiedNode)
+
+		newNode := &ast.CallExpr{
+			Fun: &ast.FuncLit{
+				Type: &ast.FuncType{
+					Results: objectifiedNode,
+				},
+				Body: &ast.BlockStmt{
+					List: []ast.Stmt{
+						&ast.ExprStmt{
+							X: castedNode,
+						},
+					},
 				},
 			},
-			Type: &ast.Ident{
-				Name: "* concolicTypes.ConcreteValues",
-			},
-		},
-		&ast.Field{
-			Names: []*ast.Ident{
-				&ast.Ident{
-					Name: "currPathConstrs",
+		}
+		if objectified != nil {
+			fmt.Printf("MOTHERFUCKER")
+			declaration := castedNode.Fun.(*ast.Ident).Obj.Decl.(*ast.FuncDecl)
+			// name := declaration.Name.Name
+			paramList := declaration.Type.Params.List
+			for _, aParam := range paramList {
+				// TODO value
+				if aParam.Type.(*ast.Ident).Name == "string" || aParam.Type.(*ast.Ident).Name == "int" || aParam.Type.(*ast.Ident).Name == "bool" {
+					for _, aNameNode := range aParam.Names {
+						newNode.Fun.(*ast.FuncLit).Body.List = append(
+							[]ast.Stmt{
+								&ast.ExprStmt{
+									X: &ast.CallExpr{
+										Fun: &ast.Ident{
+											Name: "concolicTypes.SymStack.PushArg",
+										},
+										Args: []ast.Expr{
+											&ast.Ident{
+												Name: aNameNode.Name + ".Z3Expr",
+											},
+										},
+									},
+								},
+							}, newNode.Fun.(*ast.FuncLit).Body.List...)
+						aNameNode.Name += "Val"
+						// TODO might fuck some things up
+						aNameNode.Obj = nil
+					}
+				}
+			}
+			newNode.Fun.(*ast.FuncLit).Body.List = append(
+				[]ast.Stmt{&ast.ExprStmt{
+					X: &ast.CallExpr{
+						Fun: &ast.Ident{Name: "concolicTypes.SymStack.SetArgsPushed"},
+					},
 				},
-			},
-			Type: &ast.Ident{
-				Name: "*[]z3.Bool",
-			},
+				},
+				newNode.Fun.(*ast.FuncLit).Body.List...)
+
+			for _, aParam := range objectifiedNode.List {
+				// supposed to look like
+				// i = makeConcolicIntVar(cv, "i")
+				switch aParam.Type.(*ast.Ident).Name {
+				case "concolicTypes.ConcolicString":
+					aParam.Type = &ast.Ident{Name: "string"}
+				case "concolicTypes.ConcolicInt":
+					aParam.Type = &ast.Ident{Name: "int"}
+				case "concolicTypes.ConcolicBool":
+					aParam.Type = &ast.Ident{Name: "bool"}
+				default:
+					fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
+					// fmt.("WE DON'T SUPPORT THIS TYPE!")
+					// if the type is wrong, it's all wrong, so move onto next parameter
+					break
+
+				}
+			}
+			// for _, aParam := range objectifiedNode.List {
+			// 	switch aParam.Type.(type) {
+			// 	case *ast.Ident:
+			// 		switch aParam.Type.(*ast.Ident).Name {
+			// 		case "concolicTypes.ConcolicString":
+			// 			aParam.Type.(*ast.Ident).Name = "string"
+			// 			aParam.Type.(*ast.Ident).Obj.Name = "string"
+			// 			aParam.Type.(*ast.Ident).NamePos = token.NoPos
+			// 		case "concolicTypes.ConcolicInt":
+			// 			aParam.Type.(*ast.Ident).Name = "int"
+			// 			aParam.Type.(*ast.Ident).Obj.Name = "int"
+			// 			aParam.Type.(*ast.Ident).NamePos = token.NoPos
+			// 		case "concolicTypes.ConcolicBool":
+			// 			aParam.Type.(*ast.Ident).Name = "bool"
+			// 			aParam.Type.(*ast.Ident).Obj.Name = "bool"
+			// 			aParam.Type.(*ast.Ident).NamePos = token.NoPos
+			// 			// aParam.Type.(*ast.Ident).Obj.
+			// 		default:
+			// 			fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
+			// 			// fmt.("WE DON'T SUPPORT THIS TYPE!")
+			// 			// if the type is wrong, it's all wrong, so move onto next parameter
+
+			// 		}
+
+			// 	}
+			// }
+
+		}
+		curNode.Replace(newNode)
+	case *ast.SelectorExpr:
+	case *ast.FuncLit:
+	default:
+		ast.Print(token.NewFileSet(), curNode.Node())
+		panic("not supported!")
+	}
+	// TODO
+
+}
+
+func instrumentReturnStmt(curNode *astutil.Cursor) {
+	castedNode := curNode.Node().(*ast.ReturnStmt)
+	newNode := &ast.BlockStmt{
+		List: []ast.Stmt{
+			castedNode,
 		},
 	}
-	castedType.Params.List = newFuncArgs
+	for index, val := range castedNode.Results {
+		symStackStmt :=
+			[]ast.Stmt{
+				&ast.ExprStmt{
+					X: &ast.CallExpr{
+						Fun: &ast.Ident{
+							Name: "concolicTypes.SymStack.PushReturn",
+						},
+						// TODO add all arguments
+						// TODO enable type checking for return
+						// currently asssuming returns concolic whatever
+						Args: []ast.Expr{
+							&ast.SelectorExpr{
+								X: val,
+								Sel: &ast.Ident{
+									Name: "Z3Expr",
+								},
+							},
+						},
+					},
+				},
+			}
+		newNode.List = append(symStackStmt, newNode.List...)
+		castedNode.Results[index] = &ast.SelectorExpr{
+			X: val,
+			Sel: &ast.Ident{
+				Name: "Value",
+			},
+		}
+	}
+	curNode.Replace(newNode)
 }
 
 // add in a handler here and rename the method

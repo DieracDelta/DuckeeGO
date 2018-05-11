@@ -7,6 +7,14 @@ import "gitlab.com/mgmap/maps"
 
 var ctx *z3.Context
 
+func MakeFuzzyInt(name string, a int) {
+
+}
+
+func MakeFuzzyBool(name string, b bool) {
+
+}
+
 func setGlobalContext() {
 	ctxConfig := z3.NewContextConfig()
 	ctxConfig.SetUint("timeout", 5000)
@@ -14,7 +22,7 @@ func setGlobalContext() {
 }
 
 func concolicExecInput(testfunc reflect.Value, concreteValues *ConcreteValues) ([]reflect.Value, *[]z3.Bool) {
-	var currPathConstrs []z3.Bool
+	var currPathConstrs []z3.Bool 
 	args := []reflect.Value{reflect.ValueOf(concreteValues), reflect.ValueOf(&currPathConstrs)}
 	res := testfunc.Call(args)
 	return res, &currPathConstrs

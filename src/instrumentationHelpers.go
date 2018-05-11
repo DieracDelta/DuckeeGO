@@ -501,7 +501,6 @@ func instrumentCallExpr(curNode *astutil.Cursor) {
 		} else {
 			objectified = nil
 		}
-		fmt.Printf("SHISTSHITSHTI")
 
 		newNode := &ast.CallExpr{
 			Fun: &ast.FuncLit{
@@ -613,6 +612,7 @@ func instrumentCallExpr(curNode *astutil.Cursor) {
 
 		}
 		curNode.Replace(newNode)
+		instrumentParentOfCallExpr(curNode)
 	case *ast.SelectorExpr:
 	case *ast.FuncLit:
 	default:
@@ -681,4 +681,21 @@ func instrumentMainMethod(curNode *astutil.Cursor) {
 		},
 	}
 	castedNode.Name.Name = "instrumentedMainMethod"
+}
+
+func instrumentParentOfCallExpr(curNode *astutil.Cursor) {
+	// castedNode := curNode.Node().(*ast.CallExpr)
+	parentNode := curNode.Parent()
+	switch parentNode.(type) {
+	case *ast.AssignStmt:
+		castedParentNode := parentNode.(*ast.AssignStmt)
+		for index, val := range castedParentNode.Lhs {
+			switch val.(type) {
+			case *ast.Ident:
+				castedParentNode.Lhs[index] = &ast.Ident{Name: val.(*ast.Ident).Name + "Val"}
+			}
+		}
+	default:
+		return
+	}
 }

@@ -1,8 +1,9 @@
 package concolicTypes
 
 type ConcreteValues struct {
-	intVals  map[string]int
-	boolVals map[string]bool
+	intVals    map[string]int
+	boolVals   map[string]bool
+	stringVals map[string]string
 }
 
 func newConcreteValues() *ConcreteValues {
@@ -26,6 +27,24 @@ func (cv *ConcreteValues) getIntMappings() map[string]int {
 
 func (cv *ConcreteValues) addIntValue(name string, value int) {
 	cv.intVals[name] = value
+}
+
+// ================= STRINGS =================
+
+func (cv *ConcreteValues) getStringValue(name string) string {
+	if _, ok := cv.stringVals[name]; !ok {
+		cv.stringVals[name] = ""
+		return ""
+	}
+	return cv.stringVals[name]
+}
+
+func (cv *ConcreteValues) getStringMappings() map[string]string {
+	return cv.stringVals
+}
+
+func (cv *ConcreteValues) addStringValue(name string, value string) {
+	cv.stringVals[name] = value
 }
 
 // ================= BOOLS =================

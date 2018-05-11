@@ -106,7 +106,7 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 	k := i.ConcIntAdd(j)
 	b := i.ConcEq(j)
 	if b.Value {
-		AddPositivePathConstr(currPathConstrs, b.Sym)
+		AddPositivePathConstr(currPathConstrs, b.z3Expr)
 		fmt.Printf("grace is ")
 		b1 := i.ConcNE(j)
 		if b1.Value {
@@ -155,6 +155,7 @@ func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int
 
 func Main() {
 	h := new(Handler)
+	// method := reflect.ValueOf(h).MethodByName("main")
 	method := reflect.ValueOf(h).MethodByName("Rubberducky")
 	ConcolicExec(method, 100)
 }

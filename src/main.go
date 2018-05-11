@@ -574,7 +574,7 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 							&ast.SelectorExpr{
 								X: cond,
 								Sel: &ast.Ident{
-									Name: "Sym",
+									Name: "Z3Expr",
 								},
 							},
 						},
@@ -603,7 +603,7 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 								&ast.SelectorExpr{
 									X: cond,
 									Sel: &ast.Ident{
-										Name: "Sym",
+										Name: "Z3Expr",
 									},
 								},
 							},

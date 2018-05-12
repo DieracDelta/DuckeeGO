@@ -4,24 +4,19 @@
     "Data" :
     [
         {
-            "RelFilePath": "duck.go",
+            "RelFilePath": "main.go",
             "Functions": [
                 {
-                    "Name": "Quack",
+                    "Name": "f",
                     "Object": "nil",
-                    "Input": ["bool"],
-                    "Output": ["nil"]
-                }
-            ]
-        },
-        {
-            "RelFilePath": "memey.go",
-            "Functions": [
+                    "Input": ["int", "int"],
+                    "Output": ["int"]
+                },
                 {
-                    "Name": "Danck",
+                    "Name": "main",
                     "Object": "nil",
-                    "Input": ["bool", "int", "int"],
-                    "Output": ["bool"]
+                    "Input": [],
+                    "Output": []
                 }
             ]
         }

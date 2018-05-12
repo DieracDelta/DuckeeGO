@@ -16,6 +16,7 @@ func main() {
 import (
 	"github.com/otiai10/copy"
 	"os"
+	"strings"
 
 	"fmt"
 
@@ -38,7 +39,7 @@ import (
 
 // argment is path to example program
 var DEST = "/tmp/DuckieConcolic/"
-var VERBOSE = false
+var VERBOSE = true
 
 func main() {
 	if false {
@@ -87,12 +88,20 @@ func main() {
 		}
 		instrumentedAST := astutil.Apply(uninstrumentedAST, astutil.ApplyFunc(addInstrumentationPre), astutil.ApplyFunc(addInstrumentationPost))
 
+		if VERBOSE {
+			_ = ast.Print(fset, instrumentedAST)
+		}
 		var buf bytes.Buffer
 		err = printer.Fprint(&buf, fset, instrumentedAST)
 		if err != nil {
 			panic(err)
 		}
 		// fmt.Println(buf.String())
+		if strings.Contains(aGoFile.FilePath, "main") {
+
+			aGoFile.FilePath = strings.Replace(aGoFile.FilePath, "main", "userMain", 1)
+
+		}
 		_ = os.Remove(DEST + aGoFile.FilePath)
 		tmpFile, _ := os.Create(DEST + aGoFile.FilePath)
 		_, _ = tmpFile.WriteString(buf.String())
@@ -205,8 +214,22 @@ func constructMain(configData ConfigData) *ast.File {
 									Args: []ast.Expr{
 										&ast.BasicLit{
 											Kind:  token.STRING,
-											Value: "\"DONTWORRYABOUTITBRO\"",
+											Value: "\"instrumentedMainMethod\"",
 										},
+									},
+								},
+							},
+						},
+						&ast.ExprStmt{
+							X: &ast.CallExpr{
+								Fun: &ast.Ident{Name: "concolicTypes.ConcolicExec"},
+								Args: []ast.Expr{
+									&ast.Ident{
+										Name: "method",
+									},
+									&ast.BasicLit{
+										Kind:  token.INT,
+										Value: "100",
 									},
 								},
 							},
@@ -217,59 +240,61 @@ func constructMain(configData ConfigData) *ast.File {
 		},
 	}
 
-	for _, aThing := range configData.ConfigData {
-		for _, aFunc := range aThing.Functions {
-			node1 :=
-				&ast.AssignStmt{
-					Lhs: []ast.Expr{
-						&ast.Ident{
-							Name: "method",
-						},
-					},
-					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{
-						&ast.CallExpr{
-							Fun: &ast.SelectorExpr{
-								X: &ast.CallExpr{
-									Fun: &ast.SelectorExpr{
-										X:   &ast.Ident{Name: "reflect"},
-										Sel: &ast.Ident{Name: "ValueOf"},
-									},
-									Args: []ast.Expr{
-										&ast.Ident{Name: "h"},
-									},
-								},
-								Sel: &ast.Ident{Name: "MethodByName"},
-							},
-							Args: []ast.Expr{
-								&ast.BasicLit{
-									Kind:  token.STRING,
-									Value: "\"" + aFunc.Name + "\"",
-								},
-							},
-						},
-					},
-				}
-			node2 := &ast.ExprStmt{
-				X: &ast.CallExpr{
-					Fun: &ast.Ident{Name: "concolicTypes.ConcolicExec"},
-					Args: []ast.Expr{
-						&ast.Ident{
-							Name: "method",
-						},
-						&ast.BasicLit{
-							Kind:  token.INT,
-							Value: "100",
-						},
-					},
-				},
-			}
+	// castedNode.Name.Name = "instrumentedMainMethod"
+	// OBSELETE--to instrument a list of functions with stuff
+	// for _, aThing := range configData.ConfigData {
+	// 	for _, aFunc := range aThing.Functions {
+	// 		node1 :=
+	// 			&ast.AssignStmt{
+	// 				Lhs: []ast.Expr{
+	// 					&ast.Ident{
+	// 						Name: "method",
+	// 					},
+	// 				},
+	// 				Tok: token.ASSIGN,
+	// 				Rhs: []ast.Expr{
+	// 					&ast.CallExpr{
+	// 						Fun: &ast.SelectorExpr{
+	// 							X: &ast.CallExpr{
+	// 								Fun: &ast.SelectorExpr{
+	// 									X:   &ast.Ident{Name: "reflect"},
+	// 									Sel: &ast.Ident{Name: "ValueOf"},
+	// 								},
+	// 								Args: []ast.Expr{
+	// 									&ast.Ident{Name: "h"},
+	// 								},
+	// 							},
+	// 							Sel: &ast.Ident{Name: "MethodByName"},
+	// 						},
+	// 						Args: []ast.Expr{
+	// 							&ast.BasicLit{
+	// 								Kind:  token.STRING,
+	// 								Value: "\"" + aFunc.Name + "\"",
+	// 							},
+	// 						},
+	// 					},
+	// 				},
+	// 			}
+	// 		node2 := &ast.ExprStmt{
+	// 			X: &ast.CallExpr{
+	// 				Fun: &ast.Ident{Name: "concolicTypes.ConcolicExec"},
+	// 				Args: []ast.Expr{
+	// 					&ast.Ident{
+	// 						Name: "method",
+	// 					},
+	// 					&ast.BasicLit{
+	// 						Kind:  token.INT,
+	// 						Value: "100",
+	// 					},
+	// 				},
+	// 			},
+	// 		}
 
-			stuff.Decls[3].(*ast.FuncDecl).Body.List = append(stuff.Decls[3].(*ast.FuncDecl).Body.List, node1)
-			stuff.Decls[3].(*ast.FuncDecl).Body.List = append(stuff.Decls[3].(*ast.FuncDecl).Body.List, node2)
+	// 		stuff.Decls[3].(*ast.FuncDecl).Body.List = append(stuff.Decls[3].(*ast.FuncDecl).Body.List, node1)
+	// 		stuff.Decls[3].(*ast.FuncDecl).Body.List = append(stuff.Decls[3].(*ast.FuncDecl).Body.List, node2)
 
-		}
-	}
+	// 	}
+	// }
 	stuff.Imports = []*ast.ImportSpec{a, b}
 	return stuff
 }

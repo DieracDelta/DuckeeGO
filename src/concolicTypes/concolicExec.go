@@ -5,10 +5,10 @@ import "reflect"
 import "github.com/aclements/go-z3/z3"
 import "gitlab.com/mgmap/maps"
 
-var ctx 										*z3.Context
-var concreteValuesGlobal		*ConcreteValues
-var currPathConstrsGlobal 	*[]z3.Bool
-var symStack								*SymbolicStack
+var ctx *z3.Context
+var concreteValuesGlobal *ConcreteValues
+var currPathConstrsGlobal *[]z3.Bool
+var SymStack *SymbolicStack
 
 func MakeFuzzyInt(name string, a int) int {
 	return a
@@ -23,7 +23,7 @@ func initializeGlobals() {
 	ctxConfig.SetUint("timeout", 5000)
 	ctx = z3.NewContext(ctxConfig)
 
-	symStack = newSymbolicStack()
+	SymStack = newSymbolicStack()
 }
 
 func concolicExecInput(testfunc reflect.Value, cv *ConcreteValues) []reflect.Value {
@@ -31,7 +31,7 @@ func concolicExecInput(testfunc reflect.Value, cv *ConcreteValues) []reflect.Val
 	concreteValuesGlobal = cv
 	newPathConstrs := make([]z3.Bool, 0)
 	currPathConstrsGlobal = &newPathConstrs
-	symStack.ClearArgs()
+	SymStack.ClearArgs()
 
 	res := testfunc.Call(make([]reflect.Value, 0))
 	return res
@@ -116,11 +116,13 @@ func AddNegativePathConstr(constr z3.Bool) {
 
 type Handler struct{}
 
-func rubberducky(iVal int, jVal int, sVal string) int {
-	i := MakeConcolicInt(iVal, symStack.PopArg().(z3.Int))
-	j := MakeConcolicInt(jVal, symStack.PopArg().(z3.Int))
-	s := ConcolicString{sVal, symStack.PopArg().(z3.BV)}
-	symStack.SetArgsPopped()
+// an example instrumented function
+func rubberducky(iVal int, jVal int) int {
+	i := MakeConcolicInt(iVal, SymStack.PopArg().(z3.Int))
+	_ = i
+	j := MakeConcolicInt(jVal, SymStack.PopArg().(z3.Int))
+	_ = j
+	SymStack.SetArgsPopped()
 
 	k := i.ConcIntAdd(j)
 	if i.ConcIntEq(j).Value {
@@ -130,18 +132,16 @@ func rubberducky(iVal int, jVal int, sVal string) int {
 			AddPositivePathConstr(i.ConcIntNE(j).Z3Expr)
 			fmt.Println("mean")
 
-			symStack.PushReturn(k.Z3Expr)
+			SymStack.PushReturn(k.Z3Expr)
 			return k.Value
 		} else {
 			AddNegativePathConstr(i.ConcIntNE(j).Z3Expr)
 			fmt.Printf("pretty")
 
-
-
 			fmt.Println(" mean")
 
 			l := i.ConcIntSub(j)
-			symStack.PushReturn(l.Z3Expr)
+			SymStack.PushReturn(l.Z3Expr)
 			return l.Value
 		}
 	} else {
@@ -154,7 +154,7 @@ func rubberducky(iVal int, jVal int, sVal string) int {
 			fmt.Println("great")
 
 			q := k.ConcIntMod(j)
-			symStack.PushReturn(q.Z3Expr)
+			SymStack.PushReturn(q.Z3Expr)
 			return q.Value
 		} else {
 			AddNegativePathConstr(k.ConcIntEq(j).Z3Expr)
@@ -162,7 +162,7 @@ func rubberducky(iVal int, jVal int, sVal string) int {
 			fmt.Println("cute")
 
 			q := k.ConcIntMul(j)
-			symStack.PushReturn(q.Z3Expr)
+			SymStack.PushReturn(q.Z3Expr)
 			return q.Value
 		}
 	}
@@ -183,18 +183,23 @@ func (h Handler) Main() {
 	// s := MakeConcolicStrVar("s")
 	j := MakeConcolicIntConst(3)
 
-	// symStack.PushArg(s.Z3Expr)
-	symStack.PushArg(j.Z3Expr)
-	symStack.PushArg(i.Z3Expr)
-	symStack.SetArgsPushed()
-	zVal := rubberducky(i.Value, j.Value)
-	var z ConcolicInt
-	if symStack.AreArgsPushed() {
-		z = MakeConcolicIntConst(zVal)
-		symStack.ClearArgs()
-	} else {
-		z = MakeConcolicInt(zVal, symStack.PopReturn().(z3.Int))
-	}
+	z := func() ConcolicInt {
+		// TODO order is off irl
+		SymStack.PushArg(j.Z3Expr)
+		SymStack.PushArg(i.Z3Expr)
+		SymStack.SetArgsPushed()
+		var z ConcolicInt
+		zVal := rubberducky(i.Value, j.Value)
+		if SymStack.AreArgsPushed() {
+			z = MakeConcolicIntConst(zVal)
+			// TODO not actually a function call
+			SymStack.ClearArgs()
+		} else {
+			// TODO missing "."
+			z = MakeConcolicInt(zVal, SymStack.PopReturn().(z3.Int))
+		}
+		return z
+	}()
 
 	fmt.Printf("i: %v\n", i.Value)
 	fmt.Printf("z: %v\n", z.Value)

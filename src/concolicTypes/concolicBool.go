@@ -8,7 +8,7 @@ type ConcolicBool struct {
 }
 
 func MakeConcolicBoolVar(name string) ConcolicBool {
-	return ConcolicBool{Value: concreteValuesGlobal.GetBoolValue(name), Z3Expr: ctx.BoolConst(name)}
+	return ConcolicBool{Value: concreteValuesGlobal.getBoolValue(name), Z3Expr: ctx.BoolConst(name)}
 }
 
 func MakeConcolicBoolConst(value bool) ConcolicBool {

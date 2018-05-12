@@ -4,10 +4,11 @@ type ConcreteValues struct {
 	intVals    map[string]int
 	boolVals   map[string]bool
 	stringVals map[string]string
+  mapVals    map[string]map[int]int
 }
 
 func newConcreteValues() *ConcreteValues {
-	return &ConcreteValues{intVals: make(map[string]int), boolVals: make(map[string]bool), stringVals: make(map[string]string)}
+  return &ConcreteValues{intVals: make(map[string]int), boolVals: make(map[string]bool), stringVals: make(map[string]string), mapVals: make(map[string]map[int]int)}
 }
 
 // ================= INTS =================
@@ -51,7 +52,7 @@ func (cv *ConcreteValues) addStringValue(name string, value string) {
 // ================= BOOLS =================
 
 // initialize unseen bools to false
-func (cv *ConcreteValues) GetBoolValue(name string) bool {
+func (cv *ConcreteValues) getBoolValue(name string) bool {
 	if _, ok := cv.boolVals[name]; !ok {
 		cv.boolVals[name] = false
 		return false
@@ -66,6 +67,26 @@ func (cv *ConcreteValues) getBoolMappings() map[string]bool {
 func (cv *ConcreteValues) addBoolValue(name string, value bool) {
 	cv.boolVals[name] = value
 }
+
+// ================= MAPS =================
+
+// initialize unseen maps to an empty map
+func (cv *ConcreteValues) getMapValue(name string) map[int]int {
+  if _, ok := cv.mapVals[name]; !ok {
+    cv.mapVals[name] = make(map[int]int)
+    return cv.mapVals[name]
+  }
+  return cv.mapVals[name]
+}
+
+func (cv *ConcreteValues) getMapMappings() map[string]map[int]int {
+  return cv.mapVals
+}
+
+func (cv *ConcreteValues) addMapValue(name string, value map[int]int) {
+  cv.mapVals[name] = value
+}
+
 
 // // ================= UTILITY =================
 

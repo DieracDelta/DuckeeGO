@@ -1,2 +1,6 @@
 .DS_Store
 *.swp
+src/main
+src/configStuff
+src/src
+src/tmp

@@ -5,7 +5,7 @@ import "fmt"
 
 func main() {
 	x := concolicTypes.MakeFuzzyInt("x", 6)
-	y := 7
+	y := concolicTypes.MakeFuzzyBool("y", true)
 
 	z := f(x, y)
 
@@ -19,14 +19,14 @@ func main() {
 	fmt.Printf("bruh %v\r\n", z)
 }
 
-func f(x int, y int) int {
+func f(x int, y int) bool {
 	z := x + y
 	if z > 0 {
 		fmt.Println("hi")
-		return 1
+		return true
 	} else {
 		fmt.Println("I'm tired --chris")
-		return z
+		return false
 	}
 
 }

@@ -39,7 +39,7 @@ import (
 
 // argment is path to example program
 var DEST = "/tmp/DuckieConcolic/"
-var VERBOSE = true
+var VERBOSE = false
 
 func main() {
 	if false {
@@ -214,7 +214,7 @@ func constructMain(configData ConfigData) *ast.File {
 									Args: []ast.Expr{
 										&ast.BasicLit{
 											Kind:  token.STRING,
-											Value: "\"instrumentedMainMethod\"",
+											Value: "\"InstrumentedMainMethod\"",
 										},
 									},
 								},

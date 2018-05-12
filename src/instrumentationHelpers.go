@@ -282,7 +282,7 @@ func instrumentAssignStmt(curNode *astutil.Cursor) {
 
 	replacementNode :=
 		ast.AssignStmt{
-			Tok: token.ASSIGN,
+			Tok: curNode.Node().(*ast.AssignStmt).Tok,
 			Lhs: castedNode.Lhs,
 			Rhs: castedNode.Rhs,
 			// Rhs: []ast.Expr{
@@ -482,7 +482,8 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 	poppedStatement := &ast.ExprStmt{
 		X: &ast.CallExpr{
 			Fun: &ast.Ident{
-				Name: "symStack.SetArgsPopped",
+				// TODO fix this
+				Name: "concolicTypes.SymStack.SetArgsPopped",
 			},
 		},
 	}
@@ -564,11 +565,14 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 
 	for index1, aParam := range castedType.Params.List {
 		aParam = castedType.Params.List[len(castedType.Params.List)-1-index1]
+		newParam := &ast.Field{
+			// Type:  aParam.Type,
+			Names: []*ast.Ident{},
+		}
 		for index2, aName := range aParam.Names {
 			aName = aParam.Names[len(aParam.Names)-1-index2]
-			// supposed to look like
-			// i = makeConcolicIntVar(cv, "i")
 			var methodPiece string
+			canInstrument := true
 			switch aParam.Type.(*ast.Ident).Name {
 			// case "string":
 			// 	fallthrough
@@ -584,6 +588,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 			case "concolicTypes.ConcolicBool":
 				methodPiece = "Bool"
 			default:
+				canInstrument = false
 				fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
 				// fmt.("WE DON'T SUPPORT THIS TYPE!")
 				// if the type is wrong, it's all wrong, so move onto next parameter
@@ -591,8 +596,15 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 
 			}
 
-			aParam.Type = &ast.Ident{Name: strings.ToLower(methodPiece)}
-			newCastedType.Params.List = append([]*ast.Field{aParam}, newCastedType.Params.List...)
+			if canInstrument {
+				newParam.Names = append(newParam.Names, &ast.Ident{Name: aName.Name + "Val"})
+
+			}
+
+			// I CHANGED THIS
+			// aParam.Type = &ast.Ident{Name: strings.ToLower(methodPiece)}
+			newParam.Type = &ast.Ident{Name: strings.ToLower(methodPiece)}
+			newCastedType.Params.List = append([]*ast.Field{newParam}, newCastedType.Params.List...)
 			// fmt.Print("hidbasdf\r\n")
 			// ast.Print(token.NewFileSet(), aParam.Type)
 			// TODO add in concolic constructors before the _ thingies
@@ -626,10 +638,10 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 						},
 						Args: []ast.Expr{
 							&ast.Ident{
-								Name: aName.Name,
+								Name: aName.Name + "Val",
 							},
 							&ast.Ident{
-								Name: "symStack.PopArg().(z3." + methodPiece + ")",
+								Name: "concolicTypes.SymStack.PopArg().(z3." + methodPiece + ")",
 							},
 						},
 					},
@@ -676,6 +688,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 func instrumentCallExpr(curNode *astutil.Cursor) bool {
 	castedNode := curNode.Node().(*ast.CallExpr)
 	switch castedNode.Fun.(type) {
+	// case *ast.SelectorExpr:
 	case *ast.Ident:
 		if castedNode.Fun == nil || castedNode.Fun.(*ast.Ident).Obj == nil || castedNode.Fun.(*ast.Ident).Obj.Decl == nil {
 			break
@@ -719,7 +732,7 @@ func instrumentCallExpr(curNode *astutil.Cursor) bool {
 		newNode.Fun.(*ast.FuncLit).Body.List = append(
 			[]ast.Stmt{&ast.ExprStmt{
 				X: &ast.CallExpr{
-					Fun: &ast.Ident{Name: "symStack.SetArgsPushed"},
+					Fun: &ast.Ident{Name: "concolicTypes.SymStack.SetArgsPushed"},
 				},
 			},
 			},
@@ -746,7 +759,7 @@ func instrumentCallExpr(curNode *astutil.Cursor) bool {
 								&ast.ExprStmt{
 									X: &ast.CallExpr{
 										Fun: &ast.Ident{
-											Name: "symStack.PushArg",
+											Name: "concolicTypes.SymStack.PushArg",
 										},
 										Args: []ast.Expr{
 											&ast.Ident{
@@ -859,7 +872,7 @@ func instrumentReturnStmt(curNode *astutil.Cursor) {
 				&ast.ExprStmt{
 					X: &ast.CallExpr{
 						Fun: &ast.Ident{
-							Name: "symStack.PushReturn",
+							Name: "concolicTypes.SymStack.PushReturn",
 						},
 						// TODO add all arguments
 						// TODO enable type checking for return
@@ -903,7 +916,7 @@ func instrumentMainMethod(curNode *astutil.Cursor) {
 			},
 		},
 	}
-	castedNode.Name.Name = "instrumentedMainMethod"
+	castedNode.Name.Name = "InstrumentedMainMethod"
 }
 
 func getName(parNode *ast.Node) string {
@@ -963,7 +976,7 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor) *ast.IfStmt {
 			Cond: &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
 					X: &ast.Ident{
-						Name: "symStack",
+						Name: "concolicTypes.SymStack",
 					},
 					Sel: &ast.Ident{
 						Name: "AreArgsPushed",
@@ -995,7 +1008,7 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor) *ast.IfStmt {
 						X: &ast.CallExpr{
 							Fun: &ast.SelectorExpr{
 								X: &ast.Ident{
-									Name: "symStack",
+									Name: "concolicTypes.SymStack",
 								},
 								Sel: &ast.Ident{
 									Name: "ClearArgs",
@@ -1025,10 +1038,10 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor) *ast.IfStmt {
 									&ast.CallExpr{
 										Fun: &ast.SelectorExpr{
 											X: &ast.Ident{
-												Name: "symStack",
+												Name: "concolicTypes.SymStack",
 											},
 											Sel: &ast.Ident{
-												Name: "PopReturn.",
+												Name: "PopReturn().",
 											},
 										},
 										Args: []ast.Expr{

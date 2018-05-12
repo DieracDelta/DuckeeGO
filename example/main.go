@@ -8,7 +8,8 @@ func main() {
 	y := 7
 
 	z := f(x, y)
-
+	a := map[int]int{}
+	a[0] = 1
 	// h := func() int {
 	// 	// symStack.PushArg(j.Z3Expr)
 	// 	// symStack.PushArg(i.Z3Expr)

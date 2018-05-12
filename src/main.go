@@ -38,7 +38,7 @@ import (
 // import "reflect"
 
 // argment is path to example program
-var DEST = "/tmp/DuckieConcolic/"
+var DEST = "./tmp/DuckieConcolic/"
 var VERBOSE = false
 
 func main() {

@@ -4,7 +4,6 @@ import (
 	// for rewriting
 	// "fmt"
 	"go/ast"
-	// "go/token"
 	"golang.org/x/tools/go/ast/astutil"
 	// "reflect"
 )
@@ -12,6 +11,14 @@ import (
 // var nodeNumber = 0
 
 func addInstrumentationPre(curNode *astutil.Cursor) bool {
+	switch curNode.Node().(type) {
+	case *ast.BasicLit:
+		instrumentBasicLitPre(curNode)
+	case *ast.AssignStmt:
+		instrumentAssignStmtPre(curNode)
+	case *ast.CompositeLit:
+		instrumentCompositeLitPre(curNode)
+	}
 	return true
 }
 
@@ -20,28 +27,29 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 	// the idea is to find a binary expression
 	// then check if it contains an int type (or function that returns int type)
 	// replace with the node with callexpr if it does
-	// case *ast.
 	case *ast.BinaryExpr:
-		instrumentBinaryExpr(curNode)
+		instrumentBinaryExprPost(curNode)
 	case *ast.UnaryExpr:
-		instrumentUnaryExpr(curNode)
+		instrumentUnaryExprPost(curNode)
 	case *ast.BasicLit:
-		instrumentBasicLit(curNode)
+		instrumentBasicLitPost(curNode)
+	case *ast.CompositeLit:
+		instrumentCompositeLitPost(curNode)
 	case *ast.AssignStmt:
-		instrumentAssignStmt(curNode)
+		instrumentAssignStmtPost(curNode)
 	case *ast.IncDecStmt:
-		instrumentIncDecStmt(curNode)
+		instrumentIncDecStmtPost(curNode)
 	// case *ast.BlockStmt:
 	case *ast.Ident:
-		instrumentIdent(curNode)
+		instrumentIdentPost(curNode)
 	case *ast.IfStmt:
-		instrumentIfStmt(curNode)
+		instrumentIfStmtPost(curNode)
 	case *ast.FuncDecl:
-		instrumentFuncDecl(curNode)
+		instrumentFuncDeclPost(curNode)
 	case *ast.CallExpr:
-		instrumentCallExpr(curNode)
+		instrumentCallExprPost(curNode)
 	case *ast.ReturnStmt:
-		instrumentReturnStmt(curNode)
+		instrumentReturnStmtPost(curNode)
 	default:
 		// TODO do nothing
 	}

@@ -10,73 +10,211 @@ import (
 	// "reflect"
 )
 
-// type stage1 struct {
-// 	stmts  []ast.Node
-// 	parent []int
-// }
+var concolicIntTypeString  = "CONCOLIC_INT"
+var concolicBoolTypeString = "CONCOLIC_BOOL"
+var concolicMapTypeString  = "CONCOLIC_MAP"
+var dummyTypeString = "DUMMY_TYPE"
 
-// type stage2 struct {
-// 	stmts        []ast.Node
-// 	parentParent []int
-// }
+func binExprType(tok token.Token) string {
+	switch tok {
+	case token.ADD:
+		return concolicIntTypeString
+	case token.SUB:
+		return concolicIntTypeString
+	case token.MUL:
+		return concolicIntTypeString
+	case token.QUO:
+		return concolicIntTypeString
+	case token.REM:
+		return concolicIntTypeString
+	case token.AND:
+		return concolicIntTypeString
+	case token.OR:
+		return concolicIntTypeString
+	case token.XOR:
+		return concolicIntTypeString
+	case token.SHL:
+		return concolicIntTypeString
+	case token.SHR:
+		return concolicIntTypeString
+	case token.AND_NOT:
+		return concolicBoolTypeString
+	case token.LAND:
+		return concolicBoolTypeString
+	case token.LOR:
+		return concolicBoolTypeString
+	case token.EQL:
+		return concolicIntTypeString
+	case token.LSS:
+		return concolicIntTypeString
+	case token.GTR:
+		return concolicIntTypeString
+	case token.NEQ:
+		return concolicIntTypeString
+	case token.GEQ:
+		return concolicIntTypeString
+	case token.LEQ:
+		return concolicIntTypeString
+	default:
+		return dummyTypeString
+	}
+}
 
-// type queueThing struct {
-// 	stage1 stage1
-// 	stage2 stage2
-// }
+// ===================== PRE =====================
 
-// TODO fix the broken things
-// func (self *stage1) Pop(i int) ast.Node {
-// 	// TODO better bounds checking
-// 	rVal := self.stmts[i]
-// 	self.parent = append(self.parent[0:i], self.parent[i+1:]...)
-// 	self.stmts = append(self.stmts[0:i], self.stmts[i+1:]...)
-// 	return rVal
-// }
+func instrumentBasicLitPre(curNode *astutil.Cursor) {
+	castedNode := curNode.Node().(*ast.BasicLit)
+	if castedNode.Kind == token.INT {
+		augNode :=
+			ast.CallExpr{
+				Fun: &ast.Ident{
+					Name: "concolicTypes.MakeConcolicIntConst",
+				},
+				Args: []ast.Expr{castedNode},
+			}
+		curNode.Replace(&augNode)
+	} else if castedNode.Kind == token.STRING {
+		// TODO
+	}
+}
 
-// func (self *stage1) Push(parID int, stmt ast.Node) {
-// 	self.parent = append(self.parent, parID)
-// 	self.stmts = append(self.stmts, stmt)
-// }
+func instrumentAssignStmtPre(curNode *astutil.Cursor) {
+	castedNode := curNode.Node().(*ast.AssignStmt)
+	ast.Print(token.NewFileSet(), castedNode)
+	addedNode := &ast.Ident{
+		Name: "",
+	}
+	switch castedNode.Lhs[0].(type) {
+	case *ast.Ident:
+		lhsName := castedNode.Lhs[0].(*ast.Ident).Name
+		if _, ok := typeMapping[lhsName]; !ok {
+			rhs := castedNode.Rhs[0]
+			switch rhs.(type) {
+			case *ast.BinaryExpr:
+				binTypeString := binExprType(rhs.(*ast.BinaryExpr).Op)
+				if binTypeString != dummyTypeString {
+					typeMapping[lhsName] = binTypeString
+				}
+			case *ast.CompositeLit:
+				castedRhs := rhs.(*ast.CompositeLit)
+				switch castedRhs.Type.(type) {
+				case *ast.MapType:
+					t := castedRhs.Type.(*ast.MapType)
+					_, okKey := t.Key.(*ast.Ident)
+					_, okVal := t.Value.(*ast.Ident)
+					if okKey && okVal {
+						k := t.Key.(*ast.Ident).Name
+						v := t.Value.(*ast.Ident).Name
+						if k == "int" && v == "int" {
+							typeMapping[lhsName] = concolicMapTypeString
+						}
+					}
+				default:
+				}
+			}
+		}
+	default:
+	}
+	
+}
+/*
+func instrumentAssignStmtPre(curNode *astutil.Cursor) {
+	castedNode := curNode.Node().(*ast.AssignStmt)
+	ast.Print(token.NewFileSet(), castedNode)
+	addedNode := &ast.Ident{
+		Name: "",
+	}
+	switch castedNode.Tok {
+	case token.ADD_ASSIGN:
+		addedNode.Name = "ConcIntAdd"
+	case token.SUB_ASSIGN:
+		addedNode.Name = "ConcIntSub"
+	case token.MUL_ASSIGN:
+		addedNode.Name = "ConcIntMul"
+	case token.QUO_ASSIGN:
+		addedNode.Name = "ConcIntDiv"
+	case token.REM_ASSIGN:
+		addedNode.Name = "ConcIntMod"
+	case token.AND_ASSIGN:
+		addedNode.Name = "ConcIntAnd"
+	case token.OR_ASSIGN:
+		addedNode.Name = "ConcIntOr"
+	case token.XOR_ASSIGN:
+		addedNode.Name = "ConcIntXOr"
+	case token.SHL_ASSIGN:
+		addedNode.Name = "ConcIntSHL"
+	case token.SHR_ASSIGN:
+		addedNode.Name = "ConcIntSHR"
+	case token.AND_NOT_ASSIGN:
+		addedNode.Name = "ConcBoolAndNot"
+	default:
+		// TODO iterate through all
+		switch castedNode.Rhs[0].(type) {
+		case *ast.CallExpr:
+			switch castedNode.Rhs[0].(*ast.CallExpr).Fun.(type) {
+			case *ast.FuncLit:
+				blah := castedNode.Rhs[0].(*ast.CallExpr).Fun.(*ast.FuncLit).Type.Results.List[0].Type.(*ast.Ident)
+				switch blah.Name {
+				case "concolicTypes.ConcolicString":
+					blah.Name = "string"
+				case "concolicTypes.ConcolicInt":
+					blah.Name = "int"
+				case "concolicTypes.ConcolicBool":
+					blah.Name = "bool"
+				default:
+					// fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
+					// fmt.("WE DON'T SUPPORT THIS TYPE!")
+					// if the type is wrong, it's all wrong, so move onto next parameter
+					break
 
-// func (self *stage2) Pop(i int) ast.Node {
-// 	rVal := self.stmts[i]
-// 	self.parentParent = append(self.parentParent[0:i], self.parentParent[i+1:]...)
-// 	self.stmts = append(self.stmts[0:i], self.stmts[i+1:]...)
-// 	return rVal
-// }
+				}
+				// ast.Print(token.NewFileSet(), castedNode)
+				curNode.Replace(castedNode)
+			case *ast.Ident:
+			default:
+			}
+		case *ast.FuncLit:
+		default:
+		}
+		// ast.Print(token.NewFileSet(), castedNode.Rhs[0])
+	}
 
-// func (self *stage2) Push(parparID int, stmt ast.Node) {
-// 	self.parentParent = append(self.parentParent, parparID)
-// 	self.stmts = append(self.stmts, stmt)
-// }
+	replacementNode :=
+		ast.AssignStmt{
+			Tok: curNode.Node().(*ast.AssignStmt).Tok,
+			Lhs: castedNode.Lhs,
+			Rhs: castedNode.Rhs,
+		}
+	curNode.Replace(&replacementNode)
+}
+*/
 
-// var queueOfThings queueThing
+func instrumentCompositeLitPre(curNode *astutil.Cursor) {
+	castedNode := curNode.Node().(*ast.CompositeLit)
+	
+	switch castedNode.Type.(type) {
+	case *ast.MapType:
+		t := castedNode.Type.(*ast.MapType)
+		_, okKey := t.Key.(*ast.Ident)
+		_, okVal := t.Value.(*ast.Ident)
+		if okKey && okVal {
+			k := t.Key.(*ast.Ident).Name
+			v := t.Value.(*ast.Ident).Name
+			if k == "int" && v == "int" {
+				newCompLit := &ast.CompositeLit{Type: &ast.MapType{Key: &ast.Ident{Name: "int"}, Value:&ast.Ident{Name: "int"}}}
+				newNode := &ast.CallExpr{Fun: &ast.Ident{Name: "concolicTypes.MakeConcolicMapConst"}, Args: []ast.Expr{newCompLit}}
+				curNode.Replace(newNode)
+			} else {
+				curNode.Replace(castedNode)
+			}
+		}
+	default:
+	}
+}
 
-// func updateQueueThing(curNode *astutil.Cursor) {
-// 	// curPar := curNode.Node()
-// 	// curNodePar := curNode.Parent()
-// 	for i, ele := range queueOfThings.stage1.parent {
-// 		if curNode.Node().GetId().Id == ele {
-// 			fmt.Printf("HI BOI\r\n")
-// 			stmt := queueOfThings.stage1.Pop(i)
-// 			hi := curNode.Parent().GetId().Id
-// 			queueOfThings.stage2.Push(hi, stmt)
-// 		}
-// 	}
-// }
+// ===================== POST =====================
 
-// func exerciseQueueThing(curNode *astutil.Cursor) {
-// 	curPar := curNode.Node()
-// 	for i, ele := range queueOfThings.stage2.parentParent {
-// 		if curPar.GetId().Id == ele {
-// 			fmt.Printf("HI BOI 2\r\n")
-// 			curNode.InsertAfter(queueOfThings.stage2.Pop(i))
-// 		}
-// 	}
-// }
-
-func instrumentBinaryExpr(curNode *astutil.Cursor) {
+func instrumentBinaryExprPost(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.BinaryExpr)
 
 	// TODO add switch to determine the function you use
@@ -113,13 +251,13 @@ func instrumentBinaryExpr(curNode *astutil.Cursor) {
 	case token.LOR:
 		addedNode.Name = "ConcBoolOr"
 	case token.EQL:
-		addedNode.Name = "ConcEq"
+		addedNode.Name = "ConcIntEq"
 	case token.LSS:
 		addedNode.Name = "ConcIntLT"
 	case token.GTR:
 		addedNode.Name = "ConcIntGT"
 	case token.NEQ:
-		addedNode.Name = "ConcNE"
+		addedNode.Name = "ConcIntNE"
 	case token.GEQ:
 		addedNode.Name = "ConcIntGE"
 	case token.LEQ:
@@ -141,7 +279,7 @@ func instrumentBinaryExpr(curNode *astutil.Cursor) {
 	curNode.Replace(&replacementNode)
 }
 
-func instrumentUnaryExpr(curNode *astutil.Cursor) {
+func instrumentUnaryExprPost(curNode *astutil.Cursor) {
 	// ! on bools is the only case I can think of
 	castedNode := curNode.Node().(*ast.UnaryExpr)
 	switch castedNode.Op {
@@ -168,29 +306,22 @@ func instrumentUnaryExpr(curNode *astutil.Cursor) {
 	}
 }
 
-func instrumentBasicLit(curNode *astutil.Cursor) {
-	castedNode := curNode.Node().(*ast.BasicLit)
-	ast.Print(token.NewFileSet(), castedNode)
-	if castedNode.Kind == token.INT {
-		augNode :=
-			ast.CallExpr{
-				Fun: &ast.Ident{
-					Name: "concolicTypes.MakeConcolicIntConst",
-				},
-				Args: []ast.Expr{castedNode},
-			}
-		curNode.Replace(&augNode)
-	} else if castedNode.Kind == token.STRING {
-		// TODO
-	}
+func instrumentBasicLitPost(curNode *astutil.Cursor) {
+
 }
 
-func instrumentAssignStmt(curNode *astutil.Cursor) {
-	castedNode := curNode.Node().(*ast.AssignStmt)
+func instrumentCompositeLitPost(curNode *astutil.Cursor) {
 
+}
+
+func instrumentAssignStmtPost(curNode *astutil.Cursor) {
+	castedNode := curNode.Node().(*ast.AssignStmt)
 	addedNode := &ast.Ident{
 		Name: "",
 	}
+
+	goodType := true
+
 	switch castedNode.Tok {
 	case token.ADD_ASSIGN:
 		addedNode.Name = "ConcIntAdd"
@@ -220,13 +351,11 @@ func instrumentAssignStmt(curNode *astutil.Cursor) {
 		case *ast.CallExpr:
 			switch castedNode.Rhs[0].(*ast.CallExpr).Fun.(type) {
 			case *ast.FuncLit:
-				fmt.Printf("hi")
 				blah := castedNode.Rhs[0].(*ast.CallExpr).Fun.(*ast.FuncLit).Type.Results.List[0].Type.(*ast.Ident)
 				switch blah.Name {
 				case "concolicTypes.ConcolicString":
 					blah.Name = "string"
 				case "concolicTypes.ConcolicInt":
-					fmt.Printf("hi ther")
 					blah.Name = "int"
 				case "concolicTypes.ConcolicBool":
 					blah.Name = "bool"
@@ -243,6 +372,8 @@ func instrumentAssignStmt(curNode *astutil.Cursor) {
 			default:
 			}
 		case *ast.FuncLit:
+		case *ast.CompositeLit:
+
 		default:
 		}
 		// ast.Print(token.NewFileSet(), castedNode.Rhs[0])
@@ -257,22 +388,21 @@ func instrumentAssignStmt(curNode *astutil.Cursor) {
 			// 	&ast.CallExpr{
 			// 		// TODO assert about x len
 			// 		Fun: addedNode,
-			// 		/*
+			// 		
 			// 			                        Fun: &ast.SelectorExpr{
 			// 									X: &ast.Ident{Name: "hi"},
 			// 									// X:   castedNode.Lhs[0],
 			// 									Sel: addedNode,
 			// 								},
-			// 		*/
 			// 		Args: castedNode.Rhs,
 			// 	},
 			// },
 		}
 	curNode.Replace(&replacementNode)
-	fmt.Print("actually last!")
+
 }
 
-func instrumentIncDecStmt(curNode *astutil.Cursor) {
+func instrumentIncDecStmtPost(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.IncDecStmt)
 	addedNode := &ast.Ident{
 		Name: "",
@@ -312,7 +442,7 @@ func instrumentIncDecStmt(curNode *astutil.Cursor) {
 	curNode.Replace(&replacementNode)
 }
 
-func instrumentIdent(curNode *astutil.Cursor) {
+func instrumentIdentPost(curNode *astutil.Cursor) {
 	// switch curNode.Parent().(type) {
 	// case *ast.FuncDecl:
 	// default:
@@ -323,11 +453,9 @@ func instrumentIdent(curNode *astutil.Cursor) {
 	switch castedNode.Name {
 	case "int":
 		castedNode.Name = "concolicTypes.ConcolicInt"
-		fmt.Print("HI")
 		curNode.Replace(castedNode)
 	case "bool":
 		castedNode.Name = "concolicTypes.ConcolicBool"
-		fmt.Print("HI")
 		curNode.Replace(castedNode)
 	case "true":
 		fallthrough
@@ -364,7 +492,7 @@ func instrumentIdent(curNode *astutil.Cursor) {
 
 }
 
-func instrumentIfStmt(curNode *astutil.Cursor) {
+func instrumentIfStmtPost(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.IfStmt)
 	cond := castedNode.Cond
 	castedNode.Cond = &ast.SelectorExpr{
@@ -435,7 +563,7 @@ func instrumentIfStmt(curNode *astutil.Cursor) {
 	}
 }
 
-func instrumentFuncDecl(curNode *astutil.Cursor) {
+func instrumentFuncDeclPost(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.FuncDecl)
 	// don't instrument main (I'm assuming main *could* have args)
 	// just being safe
@@ -650,7 +778,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 	// castedType.Params.List = newFuncArgs
 }
 
-func instrumentCallExpr(curNode *astutil.Cursor) bool {
+func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 	castedNode := curNode.Node().(*ast.CallExpr)
 	switch castedNode.Fun.(type) {
 	// case *ast.SelectorExpr:
@@ -822,7 +950,6 @@ func instrumentCallExpr(curNode *astutil.Cursor) bool {
 				case "MakeFuzzyInt":
 					castedChild.Sel.Name = "MakeConcolicIntVar"
 					// castedNode.Fun.(*ast.SelectorExpr).Sel.(*ast.Ident).Name = "MakeConcolicIntVar"
-					fmt.Print("HELLO")
 				case "MakeFuzzyString":
 					castedChild.Sel.Name = "MakeConcolicStringVar"
 				case "MakeFuzzyBool":
@@ -847,7 +974,7 @@ func instrumentCallExpr(curNode *astutil.Cursor) bool {
 
 }
 
-func instrumentReturnStmt(curNode *astutil.Cursor) {
+func instrumentReturnStmtPost(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.ReturnStmt)
 	newNode := &ast.BlockStmt{
 		List: []ast.Stmt{

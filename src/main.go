@@ -39,7 +39,7 @@ import (
 
 // argment is path to example program
 var DEST = "/tmp/DuckieConcolic/"
-var VERBOSE = false
+var VERBOSE = true
 
 func main() {
 	if false {
@@ -72,16 +72,6 @@ func main() {
 
 	for _, aGoFile := range configData.ConfigData {
 		fset := token.NewFileSet()
-		// queueOfThings = queueThing{
-		// 	stage1: stage1{
-		// 		stmts:  []ast.Node{},
-		// 		parent: []int{},
-		// 	},
-		// 	stage2: stage2{
-		// 		stmts:        []ast.Node{},
-		// 		parentParent: []int{},
-		// 	},
-		// }
 		// TODO add more files  by including more args
 		filePath := configData.ProjectPath + aGoFile.FilePath
 		uninstrumentedAST, err := parser.ParseFile(fset, filePath, nil, 0)
@@ -117,17 +107,6 @@ func main() {
 		_, _ = tmpFile.WriteString(buf.String())
 		_ = tmpFile.Close()
 	}
-
-	// queueOfThings = queueThing{
-	// 	stage1: stage1{
-	// 		stmts:  []ast.Node{},
-	// 		parent: []int{},
-	// 	},
-	// 	stage2: stage2{
-	// 		stmts:        []ast.Node{},
-	// 		parentParent: []int{},
-	// 	},
-	// }
 
 	fset := token.NewFileSet()
 	var buf bytes.Buffer

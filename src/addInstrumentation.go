@@ -43,7 +43,7 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 	case *ast.BasicLit:
 		instrumentBasicLit(curNode)
 	case *ast.AssignStmt:
-		instrumentAssignStmt(curNode)
+		return instrumentAssignStmt(curNode)
 	case *ast.IncDecStmt:
 		instrumentIncDecStmt(curNode)
 	// case *ast.BlockStmt:

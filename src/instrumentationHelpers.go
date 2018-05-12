@@ -170,41 +170,20 @@ func instrumentUnaryExpr(curNode *astutil.Cursor) {
 
 func instrumentBasicLit(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.BasicLit)
+	ast.Print(token.NewFileSet(), castedNode)
 	if castedNode.Kind == token.INT {
-		identifier := getIdentifier(curNode)
-		// if it's not a declaration of some sort lul
-		var theArgs []ast.Expr
-		var varOrConst string
-		if identifier == "" {
-			varOrConst = "Const"
-			theArgs = []ast.Expr{
-				castedNode,
-			}
-		} else {
-			varOrConst = "Var"
-			theArgs = []ast.Expr{
-				// &ast.Ident{
-				// 	Name: "cv",
-				// },
-				&ast.Ident{
-					Name: "\"" + identifier + "\"",
-				},
-			}
-		}
 		augNode :=
 			ast.CallExpr{
 				Fun: &ast.Ident{
-					Name: "concolicTypes.MakeConcolic" + "Int" + varOrConst,
+					Name: "concolicTypes.MakeConcolicIntConst",
 				},
-				Args: theArgs,
+				Args: []ast.Expr{castedNode},
 			}
 		curNode.Replace(&augNode)
 	} else if castedNode.Kind == token.STRING {
 		// TODO
 	}
 }
-
-var count = 0
 
 func instrumentAssignStmt(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.AssignStmt)
@@ -236,7 +215,6 @@ func instrumentAssignStmt(curNode *astutil.Cursor) {
 	case token.AND_NOT_ASSIGN:
 		addedNode.Name = "ConcBoolAndNot"
 	default:
-		fmt.Printf("this is me")
 		// TODO iterate through all
 		switch castedNode.Rhs[0].(type) {
 		case *ast.CallExpr:
@@ -261,21 +239,11 @@ func instrumentAssignStmt(curNode *astutil.Cursor) {
 				}
 				// ast.Print(token.NewFileSet(), castedNode)
 				curNode.Replace(castedNode)
-			// case *ast.FuncDecl:
-			// 	blah := castedNode.Rhs[0].(*ast.CallExpr).Fun.(*ast.FuncDecl).Type.Results.List[0].Names
-			// 	if len(blah) > 0 {
-			// 		fmt.Printf("FUCKER YOU" + blah[0].Name)
-			// 	}
 			case *ast.Ident:
 			default:
-				count++
-				// return (count < 5)
-
 			}
 		case *ast.FuncLit:
 		default:
-			count++
-			// return (count < 5)
 		}
 		// ast.Print(token.NewFileSet(), castedNode.Rhs[0])
 	}
@@ -302,8 +270,6 @@ func instrumentAssignStmt(curNode *astutil.Cursor) {
 		}
 	curNode.Replace(&replacementNode)
 	fmt.Print("actually last!")
-	count++
-	// return (count < 5)
 }
 
 func instrumentIncDecStmt(curNode *astutil.Cursor) {
@@ -518,7 +484,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 				append(
 					[]*ast.Field{
 						&ast.Field{
-							Type: &ast.Ident{Name: "String"},
+							Type: &ast.Ident{Name: "string"},
 							// 		Type: "string",
 						},
 					},
@@ -549,7 +515,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 							// 		Name: "bool",
 							// 	},
 							// },
-							Type: &ast.Ident{Name: "int"},
+							Type: &ast.Ident{Name: "bool"},
 						},
 					},
 					newCastedType.Results.List...)
@@ -561,7 +527,6 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 
 		}
 	}
-	fmt.Printf("this is you")
 
 	for index1, aParam := range castedType.Params.List {
 		aParam = castedType.Params.List[len(castedType.Params.List)-1-index1]
@@ -848,6 +813,29 @@ func instrumentCallExpr(curNode *astutil.Cursor) bool {
 		}
 
 	case *ast.SelectorExpr:
+		castedChild := castedNode.Fun.(*ast.SelectorExpr)
+		switch castedChild.X.(type) {
+		case *ast.Ident:
+			castedGrandChild := castedChild.X.(*ast.Ident)
+			if castedGrandChild.Name == "concolicTypes" {
+				switch castedChild.Sel.Name {
+				case "MakeFuzzyInt":
+					castedChild.Sel.Name = "MakeConcolicIntVar"
+					// castedNode.Fun.(*ast.SelectorExpr).Sel.(*ast.Ident).Name = "MakeConcolicIntVar"
+					fmt.Print("HELLO")
+				case "MakeFuzzyString":
+					castedChild.Sel.Name = "MakeConcolicStringVar"
+				case "MakeFuzzyBool":
+					castedChild.Sel.Name = "MakeConcolicBoolVar"
+				case "MakeFuzzyMap":
+					castedChild.Sel.Name = "MakeConcolicMapVar"
+				default:
+					return true
+				}
+				castedNode.Args = []ast.Expr{castedNode.Args[0]}
+				curNode.Replace(castedNode)
+			}
+		}
 	case *ast.FuncLit:
 	case *ast.CallExpr:
 	default:

@@ -1,6 +1,6 @@
 package concolicTypes
 
-import "fmt"
+// import "fmt"
 import "reflect"
 import "github.com/aclements/go-z3/z3"
 import "gitlab.com/mgmap/maps"
@@ -114,6 +114,7 @@ func AddNegativePathConstr(constr z3.Bool) {
 	*currPathConstrsGlobal = append(*currPathConstrsGlobal, constr.Not())
 }
 
+/*
 type Handler struct{}
 
 // an example instrumented function
@@ -167,3 +168,4 @@ func rubberducky(iVal int, jVal int) int {
 		}
 	}
 }
+*/

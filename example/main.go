@@ -22,10 +22,10 @@ func main() {
 func f(x int, y int) int {
 	z := x + y
 	if z > 0 {
-		print("hi")
+		fmt.Println("hi")
 		return 1
 	} else {
-		print("I'm tired --chris")
+		fmt.Println("I'm tired --chris")
 		return z
 	}
 

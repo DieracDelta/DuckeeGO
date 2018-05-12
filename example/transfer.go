@@ -1,7 +1,7 @@
-package transfer
+package main
 
-import "fmt"
-import "../src/concolicTypes"
+// import "fmt"
+// import "concolicTypes"
 
 // person id -> balance
 // b/c strings are mean
@@ -21,6 +21,7 @@ func transfer(sender int, recipient int, zoobars int) {
 
 }
 
+/*
 func main() {
   balances := make(map[int]int)
   // balances := make(map[int]int)
@@ -43,4 +44,4 @@ func main() {
     fmt.Println("oh no")
   }
 }
-
+*/

@@ -1081,3 +1081,11 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor) *ast.IfStmt {
 		return nil
 	}
 }
+
+func instrumentDeclParentCheckPre(curNode *astutil.Cursor) {
+	parNode := curNode.Parent()
+	switch parNode.(type) {
+	case *ast.File:
+		typeMapping = make(map[string]string)
+	}
+}

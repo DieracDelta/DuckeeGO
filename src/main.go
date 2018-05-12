@@ -41,6 +41,8 @@ import (
 var DEST = "/tmp/DuckieConcolic/"
 var VERBOSE = false
 
+var typeMapping map[string]string
+
 func main() {
 	if false {
 		fmt.Print("mr duck\r\n")
@@ -69,6 +71,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	typeMapping = make(map[string]string)
 
 	for _, aGoFile := range configData.ConfigData {
 		fset := token.NewFileSet()

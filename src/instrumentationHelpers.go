@@ -688,6 +688,7 @@ func instrumentFuncDecl(curNode *astutil.Cursor) {
 func instrumentCallExpr(curNode *astutil.Cursor) bool {
 	castedNode := curNode.Node().(*ast.CallExpr)
 	switch castedNode.Fun.(type) {
+	// case *ast.SelectorExpr:
 	case *ast.Ident:
 		if castedNode.Fun == nil || castedNode.Fun.(*ast.Ident).Obj == nil || castedNode.Fun.(*ast.Ident).Obj.Decl == nil {
 			break

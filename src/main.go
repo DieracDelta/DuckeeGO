@@ -39,7 +39,7 @@ import (
 
 // argment is path to example program
 var DEST = "/tmp/DuckieConcolic/"
-var VERBOSE = true
+var VERBOSE = false
 
 func main() {
 	if false {

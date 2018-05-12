@@ -7,15 +7,15 @@ import (
 	// "reflect"
 )
 
-var nodeNumber = 0
+// var nodeNumber = 0
 
 func addInstrumentationPre(curNode *astutil.Cursor) bool {
-	newId := ast.AstId{Id: nodeNumber}
-	ast.BinaryExpr
-	pointer := curNode.Node().GetId()
-	// *pointer = *newId
-	nodeNumber++
-	// TODO don't really need anything in here yet
+	// newId := ast.AstId{Id: nodeNumber}
+	// ast.BinaryExpr
+	// pointer := curNode.Node().GetId()
+	// // *pointer = *newId
+	// nodeNumber++
+	// // TODO don't really need anything in here yet
 	return true
 }
 
@@ -29,7 +29,7 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 	// 			goto bruh
 	// 		}
 	// 	}
-	exerciseQueueThing(curNode)
+	// exerciseQueueThing(curNode)
 	// fmt.Println(reflect.TypeOf(curNode.Node()))
 	switch curNode.Node().(type) {
 	// the idea is to find a binary expression

@@ -72,16 +72,16 @@ func main() {
 
 	for _, aGoFile := range configData.ConfigData {
 		fset := token.NewFileSet()
-		queueOfThings = queueThing{
-			stage1: stage1{
-				stmts:  []ast.Node{},
-				parent: []int{},
-			},
-			stage2: stage2{
-				stmts:        []ast.Node{},
-				parentParent: []int{},
-			},
-		}
+		// queueOfThings = queueThing{
+		// 	stage1: stage1{
+		// 		stmts:  []ast.Node{},
+		// 		parent: []int{},
+		// 	},
+		// 	stage2: stage2{
+		// 		stmts:        []ast.Node{},
+		// 		parentParent: []int{},
+		// 	},
+		// }
 		// TODO add more files  by including more args
 		filePath := configData.ProjectPath + aGoFile.FilePath
 		uninstrumentedAST, err := parser.ParseFile(fset, filePath, nil, 0)
@@ -118,16 +118,16 @@ func main() {
 		_ = tmpFile.Close()
 	}
 
-	queueOfThings = queueThing{
-		stage1: stage1{
-			stmts:  []ast.Node{},
-			parent: []int{},
-		},
-		stage2: stage2{
-			stmts:        []ast.Node{},
-			parentParent: []int{},
-		},
-	}
+	// queueOfThings = queueThing{
+	// 	stage1: stage1{
+	// 		stmts:  []ast.Node{},
+	// 		parent: []int{},
+	// 	},
+	// 	stage2: stage2{
+	// 		stmts:        []ast.Node{},
+	// 		parentParent: []int{},
+	// 	},
+	// }
 
 	fset := token.NewFileSet()
 	var buf bytes.Buffer

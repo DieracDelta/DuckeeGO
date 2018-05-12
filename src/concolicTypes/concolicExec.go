@@ -170,19 +170,20 @@ func (h Handler) Main() {
 	j := MakeConcolicIntConst(3)
 	_ = j
 
-	zVal := func() int {
+	z := func() concolicTypes.ConcolicInt {
 		symStack.PushArg(j.Z3Expr)
 		symStack.PushArg(i.Z3Expr)
 		symStack.SetArgsPushed()
-		return rubberducky(i.Value, j.Value)
+		var z ConcolicInt
+		zVal := rubberducky(i.Value, j.Value)
+		if symStack.AreArgsPushed() {
+			z = MakeConcolicIntConst(zVal)
+			symStack.ClearArgs()
+		} else {
+			z = MakeConcolicInt(zVal, symStack.PopReturn().(z3.Int))
+		}
+		return z
 	}()
-	var z ConcolicInt
-	if symStack.AreArgsPushed() {
-		z = MakeConcolicIntConst(zVal)
-		symStack.ClearArgs()
-	} else {
-		z = MakeConcolicInt(zVal, symStack.PopReturn().(z3.Int))
-	}
 
 	fmt.Printf("i: %v\n", i.Value)
 	fmt.Printf("z: %v\n", z.Value)

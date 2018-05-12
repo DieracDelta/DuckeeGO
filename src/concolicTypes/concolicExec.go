@@ -18,10 +18,8 @@ func MakeFuzzyBool(name string, b bool) bool {
 	return b
 }
 
-func MakeFuzzyMapIntInt(name string, m map[int]int) map[int]int {
-  return m
-}
 
+	return m
 func initializeGlobals() {
 	ctxConfig := z3.NewContextConfig()
 	ctxConfig.SetUint("timeout", 5000)
@@ -170,11 +168,10 @@ func rubberducky(iVal int, jVal int) int {
 
 func (h Handler) Main() {
 	i := MakeConcolicIntVar("i")
-	_ = i
 	j := MakeConcolicIntConst(3)
-	_ = j
 
 	z := func() concolicTypes.ConcolicInt {
+		// TODO order is off irl
 		symStack.PushArg(j.Z3Expr)
 		symStack.PushArg(i.Z3Expr)
 		symStack.SetArgsPushed()
@@ -182,8 +179,10 @@ func (h Handler) Main() {
 		zVal := rubberducky(i.Value, j.Value)
 		if symStack.AreArgsPushed() {
 			z = MakeConcolicIntConst(zVal)
+			// TODO not actually a function call
 			symStack.ClearArgs()
 		} else {
+			// TODO missing "."
 			z = MakeConcolicInt(zVal, symStack.PopReturn().(z3.Int))
 		}
 		return z

@@ -706,7 +706,7 @@ func instrumentCallExpr(curNode *astutil.Cursor) bool {
 							// TODO := or = and actualy make it right with right type
 						},
 						&ast.DeclStmt{
-							&ast.GenDecl{
+							Decl: &ast.GenDecl{
 								Tok:   token.VAR,
 								Specs: []ast.Spec{&ast.TypeSpec{Name: &ast.Ident{Name: getName(&parNode)}, Type: &ast.Ident{Name: "concolicTypes.ConcolicInt"}}},
 							},
@@ -716,6 +716,23 @@ func instrumentCallExpr(curNode *astutil.Cursor) bool {
 				},
 			},
 		}
+		newNode.Fun.(*ast.FuncLit).Body.List = append(
+			[]ast.Stmt{&ast.ExprStmt{
+				X: &ast.CallExpr{
+					Fun: &ast.Ident{Name: "symStack.SetArgsPushed"},
+				},
+			},
+			},
+			newNode.Fun.(*ast.FuncLit).Body.List...)
+		// switching order of args
+		// newNode.Fun.(*ast.FuncLit).Body.List,
+		// &ast.ExprStmt{
+		// 	X: &ast.CallExpr{
+		// 		Fun: &ast.Ident{Name: "symStack.SetArgsPushed"},
+		// 	},
+		// },
+		// )
+
 		if objectified != nil {
 			declaration := castedNode.Fun.(*ast.Ident).Obj.Decl.(*ast.FuncDecl)
 			// name := declaration.Name.Name
@@ -755,15 +772,6 @@ func instrumentCallExpr(curNode *astutil.Cursor) bool {
 				}
 
 			}
-
-			newNode.Fun.(*ast.FuncLit).Body.List = append(
-				[]ast.Stmt{&ast.ExprStmt{
-					X: &ast.CallExpr{
-						Fun: &ast.Ident{Name: "symStack.SetArgsPushed"},
-					},
-				},
-				},
-				newNode.Fun.(*ast.FuncLit).Body.List...)
 
 			// TODO was in here at one point
 			// for i, aParam := range newNode.Fun.(*ast.FuncLit).Type.Results.List {
@@ -984,12 +992,14 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor) *ast.IfStmt {
 						},
 					},
 					&ast.ExprStmt{
-						X: &ast.SelectorExpr{
-							X: &ast.Ident{
-								Name: "symStack",
-							},
-							Sel: &ast.Ident{
-								Name: "ClearArgs",
+						X: &ast.CallExpr{
+							Fun: &ast.SelectorExpr{
+								X: &ast.Ident{
+									Name: "symStack",
+								},
+								Sel: &ast.Ident{
+									Name: "ClearArgs",
+								},
 							},
 						},
 					},
@@ -1005,6 +1015,7 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor) *ast.IfStmt {
 						Rhs: []ast.Expr{
 							&ast.CallExpr{
 								Fun: &ast.Ident{
+									// TODO
 									Name: "concolicTypes.MakeConcolicInt",
 								},
 								Args: []ast.Expr{
@@ -1012,14 +1023,12 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor) *ast.IfStmt {
 										Name: actualName + "Val",
 									},
 									&ast.CallExpr{
-										Fun: &ast.CallExpr{
-											Fun: &ast.SelectorExpr{
-												X: &ast.Ident{
-													Name: "symStack",
-												},
-												Sel: &ast.Ident{
-													Name: "PopReturn",
-												},
+										Fun: &ast.SelectorExpr{
+											X: &ast.Ident{
+												Name: "symStack",
+											},
+											Sel: &ast.Ident{
+												Name: "PopReturn.",
 											},
 										},
 										Args: []ast.Expr{

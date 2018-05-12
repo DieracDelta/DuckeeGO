@@ -206,7 +206,7 @@ func instrumentBasicLit(curNode *astutil.Cursor) {
 
 var count = 0
 
-func instrumentAssignStmt(curNode *astutil.Cursor) bool {
+func instrumentAssignStmt(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.AssignStmt)
 
 	addedNode := &ast.Ident{
@@ -269,13 +269,13 @@ func instrumentAssignStmt(curNode *astutil.Cursor) bool {
 			case *ast.Ident:
 			default:
 				count++
-				return (count < 5)
+				// return (count < 5)
 
 			}
 		case *ast.FuncLit:
 		default:
 			count++
-			return (count < 5)
+			// return (count < 5)
 		}
 		// ast.Print(token.NewFileSet(), castedNode.Rhs[0])
 	}
@@ -303,7 +303,7 @@ func instrumentAssignStmt(curNode *astutil.Cursor) bool {
 	curNode.Replace(&replacementNode)
 	fmt.Print("actually last!")
 	count++
-	return (count < 5)
+	// return (count < 5)
 }
 
 func instrumentIncDecStmt(curNode *astutil.Cursor) {

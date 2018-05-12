@@ -104,15 +104,9 @@ func (self ConcolicInt) ConcIntMod(other ConcolicInt) ConcolicInt {
 // ================= UNOP BIT OPS RETURNING INTS =================
 
 func (self ConcolicInt) ConcIntNot() ConcolicInt {
-<<<<<<< HEAD
-  res := ^self.Value
-  sym := self.Z3Expr.ToBV(64).Not().SToInt()
-  return ConcolicInt{Value: res, Z3Expr: sym}
-=======
 	res := ^self.Value
 	sym := self.Z3Expr.ToBV(64).Not().SToInt()
 	return ConcolicInt{Value: res, Z3Expr: sym}
->>>>>>> b4590035d56b5cede85a11df157050598df363f4
 }
 
 // ================= BINOPS BIT OPS RETURNING INTS =================

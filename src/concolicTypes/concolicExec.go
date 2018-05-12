@@ -60,6 +60,7 @@ func concolicFindInput(constraint z3.Bool, names *ConcreteValues) (bool, *Concre
 				if isLiteral && ok {
 					newInput.addIntValue(key, int(value))
 				}
+				// TODO add bools and maps
 			}
 		}
 		return true, newInput
@@ -115,9 +116,10 @@ func AddNegativePathConstr(constr z3.Bool) {
 
 type Handler struct{}
 
-func rubberducky(iVal int, jVal int) int {
+func rubberducky(iVal int, jVal int, sVal string) int {
 	i := MakeConcolicInt(iVal, symStack.PopArg().(z3.Int))
 	j := MakeConcolicInt(jVal, symStack.PopArg().(z3.Int))
+	s := ConcolicString{sVal, symStack.PopArg().(z3.BV)}
 	symStack.SetArgsPopped()
 
 	k := i.ConcIntAdd(j)
@@ -147,6 +149,8 @@ func rubberducky(iVal int, jVal int) int {
 		fmt.Printf("ducks are ")
 		if k.ConcIntEq(j).Value {
 			AddPositivePathConstr(k.ConcIntEq(j).Z3Expr)
+		// if s.ConcStrConcat(s).ConcStrEq(MakeConcolicStrConst("hihi")).Value {
+			// AddPositivePathConstr(s.ConcStrConcat(s).ConcStrEq(MakeConcolicStrConst("hihi")).Z3Expr)
 			fmt.Println("great")
 
 			q := k.ConcIntMod(j)
@@ -154,6 +158,7 @@ func rubberducky(iVal int, jVal int) int {
 			return q.Value
 		} else {
 			AddNegativePathConstr(k.ConcIntEq(j).Z3Expr)
+			// AddNegativePathConstr(s.ConcStrConcat(s).ConcStrEq(MakeConcolicStrConst("hihi")).Z3Expr)
 			fmt.Println("cute")
 
 			q := k.ConcIntMul(j)
@@ -163,10 +168,22 @@ func rubberducky(iVal int, jVal int) int {
 	}
 }
 
+/*
+func main() {
+	i := MakeFuzzyInt("i", 5)
+	j := 3
+	z := rubberducky(i, j)
+	fmt.Printf("i: %v\n", i)
+	fmt.Printf("z: %v\n", z)
+}
+*/
+
 func (h Handler) Main() {
 	i := MakeConcolicIntVar("i")
+	// s := MakeConcolicStrVar("s")
 	j := MakeConcolicIntConst(3)
 
+	// symStack.PushArg(s.Z3Expr)
 	symStack.PushArg(j.Z3Expr)
 	symStack.PushArg(i.Z3Expr)
 	symStack.SetArgsPushed()
@@ -182,6 +199,10 @@ func (h Handler) Main() {
 	fmt.Printf("i: %v\n", i.Value)
 	fmt.Printf("z: %v\n", z.Value)
 }
+
+/*
+func transfer()
+*/
 
 /*
 func (h Handler) Rubberducky(cv *ConcreteValues, currPathConstrs *[]z3.Bool) int {

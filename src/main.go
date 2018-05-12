@@ -214,7 +214,7 @@ func constructMain(configData ConfigData) *ast.File {
 									Args: []ast.Expr{
 										&ast.BasicLit{
 											Kind:  token.STRING,
-											Value: "\"instrumentedMainMethod\"",
+											Value: "\"InstrumentedMainMethod\"",
 										},
 									},
 								},

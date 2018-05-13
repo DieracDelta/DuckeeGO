@@ -1,18 +1,5 @@
 package main
 
-/*
-import "./concolicTypes"
-import "reflect"
-
-func main() {
-	h := new(concolicTypes.Handler)
-	method := reflect.ValueOf(h).MethodByName("Main")
-	concolicTypes.ConcolicExec(method, 100)
-}
-*/
-
-// z3.stuff
-// import "github.com/aclements/go-z3/z3"
 import (
 	"github.com/otiai10/copy"
 	"os"
@@ -22,7 +9,6 @@ import (
 
 	"io/ioutil"
 
-	// for rewriting
 	"bytes"
 	"encoding/json"
 	"go/ast"
@@ -30,12 +16,7 @@ import (
 	"go/printer"
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
-	// "reflect"
 )
-
-// import "concolicTypes"
-
-// import "reflect"
 
 // argment is path to example program
 var DEST = "./tmp/DuckieConcolic/"

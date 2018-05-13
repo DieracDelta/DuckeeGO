@@ -708,6 +708,32 @@ func instrumentIfStmtPost(curNode *astutil.Cursor) {
 				castedNode.Else,
 			},
 		}
+	} else {
+		castedNode.Else = &ast.BlockStmt{
+			List: []ast.Stmt{
+				&ast.ExprStmt{
+					X: &ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X: &ast.Ident{
+								Name: "concolicTypes",
+							},
+							Sel: &ast.Ident{
+								Name: "AddNegativePathConstr",
+							},
+						},
+						Args: []ast.Expr{
+							&ast.SelectorExpr{
+								X: cond,
+								Sel: &ast.Ident{
+									Name: "Z3Expr",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
 	}
 }
 
@@ -819,13 +845,14 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 			declaration := castedNode.Fun.(*ast.Ident).Obj.Decl.(*ast.FuncDecl)
 			// name := declaration.Name.Name
 			paramList := declaration.Type.Params.List
-      if len(paramList) != len(castedNode.Args){
-        fmt.Print("a param list is here\r\n")
-        ast.Print(token.NewFileSet(), paramList)
-        fmt.Print("a castednode list is here\r\n")
-        ast.Print(token.NewFileSet(), castedNode.Args)
-        panic("o no sad")
-      }
+			if len(paramList) != len(castedNode.Args) {
+				fmt.Print("a param list is here\r\n")
+				ast.Print(token.NewFileSet(), paramList)
+
+				fmt.Print("a castednode list is here\r\n")
+				ast.Print(token.NewFileSet(), castedNode.Args)
+				panic("o no sad")
+			}
 
 			for index, aParam := range paramList {
 				// TODO value

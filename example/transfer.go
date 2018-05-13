@@ -5,9 +5,8 @@ package main
 
 // person id -> balance
 // b/c strings are mean
-var balances map[int]int
 
-func transfer(sender int, recipient int, zoobars int) {
+func transfer(balances map[int]int, sender int, recipient int, zoobars int) {
   sender_balance := balances[sender] - zoobars
   recipient_balance := balances[recipient] + zoobars
 
@@ -18,7 +17,6 @@ func transfer(sender int, recipient int, zoobars int) {
 
   balances[sender] = sender_balance
   balances[recipient] = recipient_balance
-
 }
 
 /*

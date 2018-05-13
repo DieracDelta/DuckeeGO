@@ -7,7 +7,7 @@ import (
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
 	// "strings"
-	// "reflect"
+  "reflect"
 )
 
 var typeMapping map[string]string
@@ -200,11 +200,6 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 					append(
 						[]*ast.Field{
 							&ast.Field{
-								// Names: []*ast.Ident{
-								// 	&ast.Ident{
-								// 		Name: "int",
-								// 	},
-								// },
 								Type: &ast.Ident{Name: "int"},
 							},
 						},
@@ -214,11 +209,6 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 					append(
 						[]*ast.Field{
 							&ast.Field{
-								// Names: []*ast.Ident{
-								// 	&ast.Ident{
-								// 		Name: "bool",
-								// 	},
-								// },
 								Type: &ast.Ident{Name: "bool"},
 							},
 						},
@@ -738,6 +728,22 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 		}
 
 		parNode := curNode.Parent()
+		daName, aval := getName(&parNode)
+		var daVal string
+		switch aval {
+		case "int":
+			aval = "Int"
+			fallthrough
+		case "bool":
+			aval = "Bool"
+			fallthrough
+		case "string":
+			aval = "String"
+			daVal = "concolicTypes.Concolic" + aval
+		default:
+			daVal = aval
+
+		}
 		newNode := &ast.CallExpr{
 
 			Fun: &ast.FuncLit{
@@ -747,7 +753,7 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 				Body: &ast.BlockStmt{
 					List: []ast.Stmt{
 						&ast.AssignStmt{
-							Lhs: []ast.Expr{&ast.Ident{Name: getName(&parNode) + "Val"}},
+							Lhs: []ast.Expr{&ast.Ident{Name: daName + "Val"}},
 							Tok: token.DEFINE,
 							Rhs: []ast.Expr{castedNode},
 							// TODO := or = and actualy make it right with right type
@@ -755,7 +761,7 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 						&ast.DeclStmt{
 							Decl: &ast.GenDecl{
 								Tok:   token.VAR,
-								Specs: []ast.Spec{&ast.TypeSpec{Name: &ast.Ident{Name: getName(&parNode)}, Type: &ast.Ident{Name: "concolicTypes.ConcolicInt"}}},
+								Specs: []ast.Spec{&ast.TypeSpec{Name: &ast.Ident{Name: daName}, Type: &ast.Ident{Name: daVal}}},
 							},
 							// TODO fix the typing
 						},
@@ -841,6 +847,7 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 			// 		// if the type is wrong, it's all wrong, so move onto next parameter
 			// 		break
 
+			daName, _ := getName(&parNode)
 			afterIf := instrumentParentOfCallExpr(curNode)
 			if afterIf != nil {
 				newNode.Fun.(*ast.FuncLit).Body.List = append(newNode.Fun.(*ast.FuncLit).Body.List, afterIf)
@@ -849,7 +856,7 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 			newNode.Fun.(*ast.FuncLit).Body.List =
 				append(
 					newNode.Fun.(*ast.FuncLit).Body.List,
-					&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: getName(&parNode)}}})
+					&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: daName}}})
 			// 	}
 			// }
 			for _, aParam := range objectifiedNode.List {
@@ -975,20 +982,42 @@ func instrumentMainMethod(curNode *astutil.Cursor) {
 	castedNode.Name.Name = "InstrumentedMainMethod"
 }
 
-func getName(parNode *ast.Node) string {
+// right now only correctly implemented for a single node
+func getName(parNode *ast.Node) (string, string) {
 	switch (*parNode).(type) {
 	case *ast.AssignStmt:
 		castedParentNode := (*parNode).(*ast.AssignStmt)
 		actualName := "_"
+		actualType := ""
 		for _, val := range castedParentNode.Lhs {
 			switch val.(type) {
 			case *ast.Ident:
 				actualName = val.(*ast.Ident).Name
+				// decl := val.(*ast.Ident).Obj.Decl
+				// ast.Print(token.NewFileSet(), decl)
+				// 				switch decl.(type){
+				// case
+				// 				}
+
 			}
 		}
-		return actualName
+		if theRhs, ok1 := castedParentNode.Rhs[0].(*ast.CallExpr); ok1 {
+			if theIdent, ok2 := theRhs.Fun.(*ast.Ident); ok2 {
+				if theDecl, ok3 := theIdent.Obj.Decl.(*ast.FuncDecl); ok3 {
+					for _, aResult := range theDecl.Type.Results.List {
+						if castedResult, ok4 := aResult.Type.(*ast.Ident); ok4 {
+							actualType = castedResult.Name
+						}
+					}
+				}
+
+			}
+
+		}
+		return actualName, actualType
 	default:
-		return ""
+		// probably shoudlnt augment/shouldn't hit this
+		return "", ""
 	}
 }
 

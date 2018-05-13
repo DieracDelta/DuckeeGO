@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	_ "fmt"
 	// for rewriting
 	"go/ast"
 	"go/token"
@@ -216,7 +216,6 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 								},
 								newCastedType.Results.List...)
 					default:
-						fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
 						// fmt.("WE DON'T SUPPORT THIS TYPE!")
 						// if the type is wrong, it's all wrong, so move onto next parameter
 						break
@@ -253,7 +252,6 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 					concolName = "Bool"
 				default:
 					canInstrument = false
-					fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
 					// fmt.("WE DON'T SUPPORT THIS TYPE!")
 					// if the type is wrong, it's all wrong, so move onto next parameter
 					break
@@ -291,7 +289,6 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 			newParam.Type = &ast.Ident{Name: goDataType}
 			newCastedType.Params.List = append([]*ast.Field{newParam}, newCastedType.Params.List...)
 			// fmt.Print("hidbasdf\r\n")
-			// ast.Print(token.NewFileSet(), aParam.Type)
 			// TODO add in concolic constructors before the _ thingies
 			// add "_ = y" for example
 			newNode2 := ast.AssignStmt{
@@ -417,7 +414,6 @@ func instrumentUnaryExprPost(curNode *astutil.Cursor) {
 		switch castedNode.X.(type) {
 		case *ast.Ident:
 			curNode.Parent().(*ast.AssignStmt).Lhs = append([]ast.Expr{&ast.Ident{Name: "_"}}, curNode.Parent().(*ast.AssignStmt).Lhs...)
-			// fmt.Printf("FUCKERa")
 			newNode := &ast.SelectorExpr{
 				X: castedNode.X,
 				Sel: &ast.Ident{
@@ -431,7 +427,6 @@ func instrumentUnaryExprPost(curNode *astutil.Cursor) {
 			castedChild.Args[0].(*ast.BasicLit).Value = "-" + castedNode.X.(*ast.CallExpr).Args[0].(*ast.BasicLit).Value
 
 		}
-		// ast.Print(token.NewFileSet(), castedNode)
 		// replacemenetNode := ast.CallExpr{
 		// 	Fun: &ast.SelectorExpr{
 		// 		X: castedNode.X,
@@ -551,13 +546,11 @@ func instrumentAssignStmtPost(curNode *astutil.Cursor) {
 						case "concolicTypes.ConcolicBool":
 							blah.Name = "bool"
 						default:
-							// fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
 							// fmt.("WE DON'T SUPPORT THIS TYPE!")
 							// if the type is wrong, it's all wrong, so move onto next parameter
 							break
 
 						}
-						// ast.Print(token.NewFileSet(), castedNode)
 						curNode.Replace(castedNode)
 					case *ast.Ident:
 					default:
@@ -569,8 +562,6 @@ func instrumentAssignStmtPost(curNode *astutil.Cursor) {
 				default:
 				}*/
 		}
-
-		// ast.Print(token.NewFileSet(), castedNode.Rhs[0])
 	}
 
 	/*
@@ -784,7 +775,6 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 		var objectifiedNode *ast.FieldList
 		if objectified != nil && objectified.Type != nil {
 			objectifiedNode = objectified.Type.Results
-			ast.Print(token.NewFileSet(), objectifiedNode)
 		} else {
 			objectifiedNode = nil
 		}
@@ -926,7 +916,6 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 								},
 							}, newNode.Fun.(*ast.FuncLit).Body.List...)
 						// aNameNode.Name += "Val"
-						// TODO might fuck some things up
 						// aNameNode.Obj = nil
 					}
 					castedNode.Args[index] = &ast.SelectorExpr{
@@ -947,14 +936,11 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 			// 		newNode.Fun.(*ast.FuncLit).Type.Results.List[i].Type = &ast.Ident{Name: "concolicTypes.ConcolicString"}
 			// 		newNode.Fun.(*ast.FuncLit).Type.Results.List[i].Type = &ast.Ident{Name: "concolicTypes.ConcolicString"}
 			// 	case "int":
-			// 		// fmt.Printf("mother of gawd")
 			// 		newNode.Fun.(*ast.FuncLit).Type.Results.List[i].Type = &ast.Ident{Name: "concolicTypes.ConcolicInt", NamePos: token.NoPos}
 
-			// 		// ast.Print(token.NewFileSet(), newNode)
 			// 	case "bool":
 			// 		newNode.Fun.(*ast.FuncLit).Type.Results.List[i].Type = &ast.Ident{Name: "concolicTypes.ConcolicBool"}
 			// 	default:
-			// 		fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
 			// 		// fmt.("WE DON'T SUPPORT THIS TYPE!")
 			// 		// if the type is wrong, it's all wrong, so move onto next parameter
 			// 		break
@@ -993,7 +979,7 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 							// aParam.Type.(*ast.Ident).NamePos = token.NoPos
 							// aParam.Type.(*ast.Ident).Obj.
 						default:
-							fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
+							//fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
 							// fmt.("WE DON'T SUPPORT THIS TYPE!")
 							// if the type is wrong, it's all wrong, so move onto next parameter
 
@@ -1031,7 +1017,6 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 	case *ast.FuncLit:
 	case *ast.CallExpr:
 	default:
-		// ast.Print(token.NewFileSet(), curNode.Node())
 		panic("not supported!")
 	}
 	// TODO
@@ -1111,7 +1096,6 @@ func getName(parNode *ast.Node) (string, string) {
 			case *ast.Ident:
 				actualName = val.(*ast.Ident).Name
 				// decl := val.(*ast.Ident).Obj.Decl
-				// ast.Print(token.NewFileSet(), decl)
 				// 				switch decl.(type){
 				// case
 				// 				}
@@ -1296,7 +1280,6 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor, rType string) *ast.IfSt
 		// 	if cn.Node() == parentNode {
 		// 		// doesn't traverse childrens so we gucci
 		// 		// TODO . replace
-		// 		fmt.Print("FUCK ME")
 		// 		cn.Replace(nextNode)
 		// 		bruh = false
 		// 	}

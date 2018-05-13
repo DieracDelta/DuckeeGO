@@ -114,7 +114,7 @@ func (cv *ConcreteValues) inherit(other *ConcreteValues) {
 }
 
 func (cv *ConcreteValues) printValues() {
-	fmt.Printf("BRANCH %v:\r\n", branchNumber)
+	fmt.Printf("ITERATION%v:\r\n", branchNumber)
 	branchNumber++
 	fmt.Println("[")
 	for key, value := range cv.intVals {

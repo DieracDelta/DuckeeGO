@@ -18,7 +18,7 @@ import (
 	"os"
 	"strings"
 
-	"fmt"
+	_ "fmt"
 
 	"io/ioutil"
 
@@ -42,9 +42,6 @@ var DEST = "./tmp/DuckieConcolic/"
 var VERBOSE = false
 
 func main() {
-	if false {
-		fmt.Print("mr duck\r\n")
-	}
 
 	fileConfigPath := os.Args[1]
 

@@ -11,6 +11,10 @@ import (
 // var nodeNumber = 0
 
 func addInstrumentationPre(curNode *astutil.Cursor) bool {
+	if _, ok := curNode.Node().(ast.Decl); ok {
+		instrumentDeclParentCheckPre(curNode)
+	}
+
 	switch curNode.Node().(type) {
 	case *ast.BasicLit:
 		instrumentBasicLitPre(curNode)
@@ -18,11 +22,17 @@ func addInstrumentationPre(curNode *astutil.Cursor) bool {
 		instrumentAssignStmtPre(curNode)
 	case *ast.CompositeLit:
 		instrumentCompositeLitPre(curNode)
+	case *ast.FuncDecl:
+		instrumentFuncDeclPre(curNode)
 	}
 	return true
 }
 
 func addInstrumentationPost(curNode *astutil.Cursor) bool {
+	// probably unnecessary to do this twice but it's fine
+	if _, ok := curNode.Node().(ast.Decl); ok {
+		instrumentDeclParentCheckPre(curNode)
+	}
 	switch curNode.Node().(type) {
 	// the idea is to find a binary expression
 	// then check if it contains an int type (or function that returns int type)

@@ -69,6 +69,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	typeMapping = make(map[string]string)
 
 	for _, aGoFile := range configData.ConfigData {
 		fset := token.NewFileSet()

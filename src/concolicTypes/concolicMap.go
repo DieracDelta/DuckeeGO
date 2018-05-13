@@ -12,7 +12,7 @@ func MakeConcolicMapVar(name string) ConcolicMap {
 }
 
 func MakeConcolicMapConst(value map[int]int) ConcolicMap {
-  zarr := ctx.ConstArray(ctx.ArraySort(ctx.IntSort(), ctx.IntSort()), ctx.FromInt(0, ctx.IntSort()))
+  zarr := ctx.ConstArray(ctx.ArraySort(ctx.IntSort(), ctx.IntSort()), ctx.FromBool(false))
   for key, v := range value {
     zarr = zarr.Store(ctx.FromInt(int64(key), ctx.IntSort()), ctx.FromInt(int64(v), ctx.IntSort()))
   }

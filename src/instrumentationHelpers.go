@@ -820,7 +820,12 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 			paramList := declaration.Type.Params.List
 			for index, aParam := range paramList {
 				// TODO value
-				if aParam.Type.(*ast.Ident).Name == "string" || aParam.Type.(*ast.Ident).Name == "int" || aParam.Type.(*ast.Ident).Name == "bool" {
+				// fmt.Print("%v\r\n", aParam.Type.(*ast.Ident).Name)
+				containedInMap := false
+				if _, ok := typeMapping[castedNode.Args[index].(*ast.Ident).Name]; ok {
+					containedInMap = true
+				}
+				if aParam.Type.(*ast.Ident).Name == "string" || aParam.Type.(*ast.Ident).Name == "int" || aParam.Type.(*ast.Ident).Name == "bool" || (len(aParam.Type.(*ast.Ident).Name) >= 3 && aParam.Type.(*ast.Ident).Name[0:2] == "map" && containedInMap) {
 					for range aParam.Names {
 						newNode.Fun.(*ast.FuncLit).Body.List = append(
 							[]ast.Stmt{

@@ -7,41 +7,41 @@ import "concolicTypes"
 // b/c strings are mean
 
 func transfer(balances map[int]int, sender int, recipient int, zoobars int) {
-  sender_balance := balances[sender] - zoobars
-  recipient_balance := balances[recipient] + zoobars
+	sender_balance := balances[sender] - zoobars
+	recipient_balance := balances[recipient] + zoobars
 
-  if sender_balance < 0 || recipient_balance < 0 {
-    // WHAT HAPPENS ???? :O
-    fmt.Println("we failedddddd")
-  }
+	if sender_balance < 0 || recipient_balance < 0 {
+		// WHAT HAPPENS ???? :O
+		fmt.Println("we failedddddd")
+	}
 
-  balances[sender] = sender_balance
-  balances[recipient] = recipient_balance
+	balances[sender] = sender_balance
+	balances[recipient] = recipient_balance
 }
 
 func main() {
-  balances := map[int]int{}
-  // balances := make(map[int]int)
+	balances := map[int]int{}
+	// balances := make(map[int]int)
 
-  balances = concolicTypes.MakeFuzzyMapIntInt("balances", balances)
+	balances = concolicTypes.MakeFuzzyMapIntInt("balances", balances)
 
-  alex := concolicTypes.MakeFuzzyInt("alex", 0)
-  bobette := concolicTypes.MakeFuzzyInt("bobette", 1)
+	alex := concolicTypes.MakeFuzzyInt("alex", 0)
+	bobette := concolicTypes.MakeFuzzyInt("bobette", 1)
 
-  balances[alex] = 10
-  balances[bobette] = 10
+	balances[alex] = 10
+	balances[bobette] = 10
 
-  zoobars := concolicTypes.MakeFuzzyInt("zoobars", 10)
+	zoobars := concolicTypes.MakeFuzzyInt("zoobars", 10)
 
-  sum := balances[alex] + balances[bobette]
+	sum := balances[alex] + balances[bobette]
 
-  transfer(balances, alex, bobette, zoobars)
+	transfer(balances, alex, bobette, zoobars)
 
-  if balances[alex] + balances[bobette] != sum {
-    fmt.Println("oh no")
-  }
+	if balances[alex]+balances[bobette] != sum {
+		fmt.Println("oh no")
+	}
 
-  g()
+	g()
 }
 
 func g() {
@@ -57,9 +57,10 @@ func g() {
 
 func f(x int, y bool) bool {
 	z := x
-  if y {
-    z = -1 * z
-  }
+	if y {
+		z = -z
+		z = -15 * z
+	}
 	if z > 0 {
 		fmt.Println("hi")
 		return true

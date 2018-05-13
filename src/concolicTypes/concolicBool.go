@@ -3,8 +3,8 @@ package concolicTypes
 import "github.com/aclements/go-z3/z3"
 
 type ConcolicBool struct {
-	Value 	bool
-	Z3Expr 	z3.Bool
+	Value  bool
+	Z3Expr z3.Bool
 }
 
 func MakeConcolicBoolVar(name string) ConcolicBool {
@@ -15,8 +15,8 @@ func MakeConcolicBoolConst(value bool) ConcolicBool {
 	return ConcolicBool{Value: value, Z3Expr: ctx.FromBool(value)}
 }
 
-func MakeConcolicBool(value bool, sym z3.Bool) {
-  return ConcolicBool{Value: value, Z3Expr: sym}
+func MakeConcolicBool(value bool, sym z3.Bool) ConcolicBool {
+	return ConcolicBool{Value: value, Z3Expr: sym}
 }
 
 // ================= UNOPS =================

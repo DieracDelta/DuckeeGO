@@ -82,7 +82,7 @@ func instrumentBasicLitPre(curNode *astutil.Cursor) {
 
 func instrumentAssignStmtPre(curNode *astutil.Cursor) bool {
 	castedNode := curNode.Node().(*ast.AssignStmt)
-	ast.Print(token.NewFileSet(), castedNode)
+	// ast.Print(token.NewFileSet(), castedNode)
 
 	switch castedNode.Lhs[0].(type) {
 	case *ast.Ident:
@@ -120,6 +120,17 @@ func instrumentAssignStmtPre(curNode *astutil.Cursor) bool {
 	return true
 }
 
+func getNextIndex(theArgs []ast.Expr, i int) int {
+	if i < len(theArgs) {
+		for j := range theArgs {
+			if j > i {
+				return j
+			}
+		}
+	}
+	return -1
+}
+
 func instrumentCompositeLitPre(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.CompositeLit)
 
@@ -145,7 +156,7 @@ func instrumentCompositeLitPre(curNode *astutil.Cursor) {
 
 func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.FuncDecl)
-	
+
 	// don't instrument main (I'm assuming main *could* have args)
 	// just being safe
 	if castedNode.Name.Name == "main" {
@@ -673,7 +684,7 @@ func instrumentIfStmtPost(curNode *astutil.Cursor) {
 						&ast.SelectorExpr{
 							X: cond,
 							Sel: &ast.Ident{
-								Name: "Z3Expr",
+								Name: "aZ3Expr",
 							},
 						},
 					},
@@ -698,7 +709,7 @@ func instrumentIfStmtPost(curNode *astutil.Cursor) {
 							&ast.SelectorExpr{
 								X: cond,
 								Sel: &ast.Ident{
-									Name: "Z3Expr",
+									Name: "bZ3Expr",
 								},
 							},
 						},
@@ -815,6 +826,7 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 		// )
 
 		if objectified != nil {
+			argIndex := getNextIndex(castedNode.Args, -1)
 			declaration := castedNode.Fun.(*ast.Ident).Obj.Decl.(*ast.FuncDecl)
 			// name := declaration.Name.Name
 			paramList := declaration.Type.Params.List
@@ -831,7 +843,8 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 										},
 										Args: []ast.Expr{
 											&ast.Ident{
-												Name: aNameNode.Name + ".Z3Expr",
+												// TODO this is a hack-- fix it by replacing ident with selectorstatement
+												Name: castedNode.Args[argIndex].(*ast.Ident).Name + ".cZ3Expr",
 											},
 										},
 									},
@@ -840,6 +853,7 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 						// aNameNode.Name += "Val"
 						// TODO might fuck some things up
 						aNameNode.Obj = nil
+						argIndex = getNextIndex(castedNode.Args, argIndex)
 					}
 				}
 			}
@@ -975,7 +989,7 @@ func instrumentReturnStmtPost(curNode *astutil.Cursor) {
 							&ast.SelectorExpr{
 								X: val,
 								Sel: &ast.Ident{
-									Name: "Z3Expr",
+									Name: "dZ3Expr",
 								},
 							},
 						},

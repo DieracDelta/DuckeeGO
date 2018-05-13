@@ -12,7 +12,9 @@ func transfer(balances map[int]int, sender int, recipient int, zoobars int) {
 
   if sender_balance < 0 || recipient_balance < 0 {
     // WHAT HAPPENS ???? :O
-    panic("we failedddddd")
+    fmt.Println("we failedddddd")
+  } else {
+
   }
 
   balances[sender] = sender_balance
@@ -34,12 +36,14 @@ func main() {
 
   sum := balances[alex] + balances[bobette]
 
-  transfer(alex, bobette, zoobars)
+  transfer(balances, alex, bobette, zoobars)
   // transfer(alex, bobette, zoobars)
 
   if balances[alex] + balances[bobette] != sum {
     fmt.Println("oh no")
-  }
+  } else {
+
+  }  
 }
 
 /*

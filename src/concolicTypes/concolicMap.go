@@ -8,11 +8,11 @@ type ConcolicMap struct {
 }
 
 func MakeConcolicMapVar(name string) ConcolicMap {
-	return ConcolicMap{Value: concreteValuesGlobal.getMapValue(name), Z3Expr: ctx.ConstArray(ctx.ArraySort(ctx.IntSort(), ctx.IntSort()), ctx.FromInt(0, ctx.IntSort()))}
+	return ConcolicMap{Value: concreteValuesGlobal.getMapValue(name), Z3Expr: ctx.ConstArray(ctx.IntSort(), ctx.FromInt(0, ctx.IntSort()))}
 }
 
 func MakeConcolicMapConst(value map[int]int) ConcolicMap {
-	zarr := ctx.ConstArray(ctx.ArraySort(ctx.IntSort(), ctx.IntSort()), ctx.FromBool(false))
+	zarr := ctx.ConstArray(ctx.IntSort(), ctx.FromInt(0, ctx.IntSort()))
 	for key, v := range value {
 		zarr = zarr.Store(ctx.FromInt(int64(key), ctx.IntSort()), ctx.FromInt(int64(v), ctx.IntSort()))
 	}
@@ -33,7 +33,7 @@ func (self ConcolicMap) ConcMapGet(key ConcolicInt) ConcolicInt {
 
 func (self ConcolicMap) ConcMapPut(key ConcolicInt, value ConcolicInt) bool {
 	self.Value[key.Value] = value.Value
-	self.Z3Expr = self.Z3Expr.Store(key.Z3Expr, value.Z3Expr)
+  self.Z3Expr = self.Z3Expr.Store(key.Z3Expr, value.Z3Expr)
 	return true
 	// TODO: do we want to return anything guys????
 }

@@ -18,6 +18,10 @@ func MakeFuzzyBool(name string, b bool) bool {
 	return b
 }
 
+func MakeFuzzyMapIntInt(name string, m map[int]int) map[int]int {
+  return m
+}
+
 func initializeGlobals() {
 	ctxConfig := z3.NewContextConfig()
 	ctxConfig.SetUint("timeout", 5000)

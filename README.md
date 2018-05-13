@@ -1,4 +1,4 @@
-# DuckDuckGo
+# DuckEEGO
 Concolic Execution Engine for Golang
 
 Relies upon aclements/z3 package.

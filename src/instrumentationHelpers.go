@@ -7,7 +7,7 @@ import (
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
 	// "strings"
-  "reflect"
+  // "reflect"
 )
 
 var typeMapping map[string]string
@@ -902,7 +902,7 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 					castedChild.Sel.Name = "MakeConcolicStringVar"
 				case "MakeFuzzyBool":
 					castedChild.Sel.Name = "MakeConcolicBoolVar"
-				case "MakeFuzzyMap":
+				case "MakeFuzzyMapIntInt":
 					castedChild.Sel.Name = "MakeConcolicMapVar"
 				default:
 					return true

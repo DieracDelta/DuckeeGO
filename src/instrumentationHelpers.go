@@ -703,7 +703,6 @@ func instrumentIfStmtPost(curNode *astutil.Cursor) {
 }
 
 func instrumentFuncDeclPost(curNode *astutil.Cursor) {
-
 }
 
 func instrumentCallExprPost(curNode *astutil.Cursor) bool {
@@ -741,30 +740,54 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 			daVal = aval
 
 		}
-		newNode := &ast.CallExpr{
 
-			Fun: &ast.FuncLit{
-				Type: &ast.FuncType{
-					Results: objectifiedNode,
-				},
-				Body: &ast.BlockStmt{
-					List: []ast.Stmt{
-						&ast.AssignStmt{
-							Lhs: []ast.Expr{&ast.Ident{Name: daName + "Val"}},
-							Tok: token.DEFINE,
-							Rhs: []ast.Expr{castedNode},
-							// TODO := or = and actualy make it right with right type
-						},
-						&ast.DeclStmt{
-							Decl: &ast.GenDecl{
-								Tok:   token.VAR,
-								Specs: []ast.Spec{&ast.TypeSpec{Name: &ast.Ident{Name: daName}, Type: &ast.Ident{Name: daVal}}},
+		var newNode *ast.CallExpr
+
+		if daName != "" {
+
+			newNode = &ast.CallExpr{
+
+				Fun: &ast.FuncLit{
+					Type: &ast.FuncType{
+						Results: objectifiedNode,
+					},
+					Body: &ast.BlockStmt{
+						List: []ast.Stmt{
+							&ast.AssignStmt{
+								Lhs: []ast.Expr{&ast.Ident{Name: daName + "Val"}},
+								Tok: token.DEFINE,
+								Rhs: []ast.Expr{castedNode},
+								// TODO := or = and actualy make it right with right type
 							},
-							// TODO fix the typing
+							&ast.DeclStmt{
+								Decl: &ast.GenDecl{
+									Tok:   token.VAR,
+									Specs: []ast.Spec{&ast.TypeSpec{Name: &ast.Ident{Name: daName}, Type: &ast.Ident{Name: daVal}}},
+								},
+								// TODO fix the typing
+							},
 						},
 					},
 				},
-			},
+			}
+		} else {
+			newNode = &ast.CallExpr{
+
+				Fun: &ast.FuncLit{
+					Type: &ast.FuncType{
+						Results: objectifiedNode,
+					},
+					Body: &ast.BlockStmt{
+						List: []ast.Stmt{
+							&ast.ExprStmt{
+								X: castedNode,
+							},
+							// TODO := or = and actualy make it right with right type
+						},
+					},
+				},
+			}
+
 		}
 		newNode.Fun.(*ast.FuncLit).Body.List = append(
 			[]ast.Stmt{&ast.ExprStmt{
@@ -846,14 +869,17 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 
 			daName, _ := getName(&parNode)
 			afterIf := instrumentParentOfCallExpr(curNode)
-			if afterIf != nil {
+			if afterIf != nil && len(newNode.Fun.(*ast.FuncLit).Body.List) > 0 {
 				newNode.Fun.(*ast.FuncLit).Body.List = append(newNode.Fun.(*ast.FuncLit).Body.List, afterIf)
 
 			}
-			newNode.Fun.(*ast.FuncLit).Body.List =
-				append(
-					newNode.Fun.(*ast.FuncLit).Body.List,
-					&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: daName}}})
+			if daName != "" {
+				newNode.Fun.(*ast.FuncLit).Body.List =
+					append(
+						newNode.Fun.(*ast.FuncLit).Body.List,
+						&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: daName}}})
+			} else {
+			}
 			// 	}
 			// }
 			for _, aParam := range objectifiedNode.List {

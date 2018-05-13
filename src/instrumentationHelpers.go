@@ -120,17 +120,6 @@ func instrumentAssignStmtPre(curNode *astutil.Cursor) bool {
 	return true
 }
 
-func getNextIndex(theArgs []ast.Expr, i int) int {
-	if i < len(theArgs) {
-		for j := range theArgs {
-			if j > i {
-				return j
-			}
-		}
-	}
-	return -1
-}
-
 func instrumentCompositeLitPre(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.CompositeLit)
 
@@ -684,7 +673,7 @@ func instrumentIfStmtPost(curNode *astutil.Cursor) {
 						&ast.SelectorExpr{
 							X: cond,
 							Sel: &ast.Ident{
-								Name: "aZ3Expr",
+								Name: "Z3Expr",
 							},
 						},
 					},
@@ -709,7 +698,7 @@ func instrumentIfStmtPost(curNode *astutil.Cursor) {
 							&ast.SelectorExpr{
 								X: cond,
 								Sel: &ast.Ident{
-									Name: "bZ3Expr",
+									Name: "Z3Expr",
 								},
 							},
 						},
@@ -826,14 +815,13 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 		// )
 
 		if objectified != nil {
-			argIndex := getNextIndex(castedNode.Args, -1)
 			declaration := castedNode.Fun.(*ast.Ident).Obj.Decl.(*ast.FuncDecl)
 			// name := declaration.Name.Name
 			paramList := declaration.Type.Params.List
-			for _, aParam := range paramList {
+			for index, aParam := range paramList {
 				// TODO value
 				if aParam.Type.(*ast.Ident).Name == "string" || aParam.Type.(*ast.Ident).Name == "int" || aParam.Type.(*ast.Ident).Name == "bool" {
-					for _, aNameNode := range aParam.Names {
+					for range aParam.Names {
 						newNode.Fun.(*ast.FuncLit).Body.List = append(
 							[]ast.Stmt{
 								&ast.ExprStmt{
@@ -844,7 +832,7 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 										Args: []ast.Expr{
 											&ast.Ident{
 												// TODO this is a hack-- fix it by replacing ident with selectorstatement
-												Name: castedNode.Args[argIndex].(*ast.Ident).Name + ".cZ3Expr",
+												Name: castedNode.Args[index].(*ast.Ident).Name + ".Z3Expr",
 											},
 										},
 									},
@@ -852,20 +840,15 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 							}, newNode.Fun.(*ast.FuncLit).Body.List...)
 						// aNameNode.Name += "Val"
 						// TODO might fuck some things up
-						aNameNode.Obj = nil
-						argIndex = getNextIndex(castedNode.Args, argIndex)
+						// aNameNode.Obj = nil
+					}
+					castedNode.Args[index] = &ast.SelectorExpr{
+						X: castedNode.Args[index],
+						Sel: &ast.Ident{
+							Name: "Value",
+						},
 					}
 				}
-			}
-
-			for i, _ := range castedNode.Args {
-				castedNode.Args[i] = &ast.SelectorExpr{
-					X: castedNode.Args[i],
-					Sel: &ast.Ident{
-						Name: "Value",
-					},
-				}
-
 			}
 
 			// TODO was in here at one point

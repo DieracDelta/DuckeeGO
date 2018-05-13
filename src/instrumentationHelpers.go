@@ -480,7 +480,8 @@ func instrumentAssignStmtPost(curNode *astutil.Cursor) {
 				lhsName := lhs.X.(*ast.Ident).Name
 				if res, ok := typeMapping[lhsName]; ok && res == concolicMapTypeString {
 					// newNode := &ast.Ident{Name: "hi"}
-					newNode := &ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
+					newNode := &ast.AssignStmt{
+						Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
 						Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: lhsName + ".ConcMapPut"}, Args: []ast.Expr{lhs.Index, castedNode.Rhs[0]}}},
 						Tok: token.ASSIGN,
 					}
@@ -825,7 +826,8 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 				if _, ok := typeMapping[castedNode.Args[index].(*ast.Ident).Name]; ok {
 					containedInMap = true
 				}
-				if aParam.Type.(*ast.Ident).Name == "string" || aParam.Type.(*ast.Ident).Name == "int" || aParam.Type.(*ast.Ident).Name == "bool" || (len(aParam.Type.(*ast.Ident).Name) >= 3 && aParam.Type.(*ast.Ident).Name[0:2] == "map" && containedInMap) {
+				ast.Print(token.NewFileSet(), aParam)
+				if aParam.Type.(*ast.Ident).Name == "string" || aParam.Type.(*ast.Ident).Name == "int" || aParam.Type.(*ast.Ident).Name == "bool" || (len(aParam.Type.(*ast.Ident).Name) >= 3 && aParam.Type.(*ast.Ident).Name[0:3] == "map" && containedInMap) {
 					for range aParam.Names {
 						newNode.Fun.(*ast.FuncLit).Body.List = append(
 							[]ast.Stmt{
@@ -1217,5 +1219,67 @@ func instrumentDeclParentCheckPre(curNode *astutil.Cursor) {
 	switch parNode.(type) {
 	case *ast.File:
 		typeMapping = make(map[string]string)
+	}
+}
+
+// 0 is LHS
+// 1 is RHS
+// 2 is not found
+func whichSideAmIOn(curNode *astutil.Cursor) int {
+	castedCurNode := curNode.Node().(*ast.IndexExpr)
+	if _, ok := curNode.Parent().(*ast.AssignStmt); !ok {
+		return 1
+
+	}
+	castedParNode, _ := curNode.Parent().(*ast.AssignStmt)
+	oldVal := castedCurNode.Lbrack
+	castedCurNode.Lbrack = 6969696969696969
+	curNode.Replace(castedCurNode)
+	rVal := 2
+	// lhs look through
+	for _, theExpr := range castedParNode.Lhs {
+		if ca, ok := theExpr.(*ast.IndexExpr); ok {
+			if ca.Lbrack == 6969696969696969 {
+				rVal = 0
+				goto finished
+			}
+		}
+	}
+	// rhs look through
+	for _, theExpr := range castedParNode.Rhs {
+		if ca, ok := theExpr.(*ast.IndexExpr); ok {
+			if ca.Lbrack == 6969696969696969 {
+				rVal = 1
+				goto finished
+			}
+		}
+	}
+finished:
+	castedCurNode.Lbrack = oldVal
+	curNode.Replace(castedCurNode)
+	return rVal
+}
+
+func instrumentIndexExprPre(curNode *astutil.Cursor) {
+	castedNode := curNode.Node().(*ast.IndexExpr)
+	switch whichSideAmIOn(curNode) {
+	case 0:
+	case 1:
+		// rhs turns into GET
+		replacementNode :=
+			ast.CallExpr{
+				Fun: &ast.SelectorExpr{
+					X:   castedNode.X,
+					Sel: &ast.Ident{Name: "ConcMapGet"},
+					// X:   castedNode.,
+					// Sel: ,
+				},
+				Args: []ast.Expr{
+					castedNode.Index,
+				},
+			}
+		curNode.Replace(&replacementNode)
+	default:
+		panic("o no")
 	}
 }

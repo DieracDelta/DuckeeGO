@@ -24,6 +24,8 @@ func addInstrumentationPre(curNode *astutil.Cursor) bool {
 		instrumentCompositeLitPre(curNode)
 	case *ast.FuncDecl:
 		instrumentFuncDeclPre(curNode)
+	case *ast.IndexExpr:
+		instrumentIndexExprPre(curNode)
 	}
 	return true
 }

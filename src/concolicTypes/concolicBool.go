@@ -15,6 +15,10 @@ func MakeConcolicBoolConst(value bool) ConcolicBool {
 	return ConcolicBool{Value: value, Z3Expr: ctx.FromBool(value)}
 }
 
+func MakeConcolicBool(value bool, sym z3.Bool) {
+  return ConcolicBool{Value: value, Z3Expr: sym}
+}
+
 // ================= UNOPS =================
 
 func (self ConcolicBool) ConcBoolNot() ConcolicBool {

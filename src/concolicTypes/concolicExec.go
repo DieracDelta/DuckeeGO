@@ -94,7 +94,8 @@ func ConcolicExec(testfunc reflect.Value, maxiter int) {
 		iter += 1
 		inputThisTime := inputs.dequeue()
 		_ = concolicExecInput(testfunc, inputThisTime)
-		// fmt.Printf(branchConstrs.AsAST().String())
+		inputThisTime.printValues()
+    // fmt.Printf(branchConstrs.AsAST().String())
 		for b := 0; b < len(*currPathConstrsGlobal); b++ {
 			oppConstr := concolicForceBranch(b, *currPathConstrsGlobal...)
 			// fmt.Printf(oppConstr.AsAST().String())

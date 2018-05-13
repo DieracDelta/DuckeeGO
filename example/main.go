@@ -13,8 +13,6 @@ func transfer(balances map[int]int, sender int, recipient int, zoobars int) {
   if sender_balance < 0 || recipient_balance < 0 {
     // WHAT HAPPENS ???? :O
     fmt.Println("we failedddddd")
-  } else {
-
   }
 
   balances[sender] = sender_balance
@@ -25,52 +23,43 @@ func main() {
   balances := map[int]int{}
   // balances := make(map[int]int)
 
+  balances = concolicTypes.MakeFuzzyMapIntInt("balances", balances)
+
   alex := concolicTypes.MakeFuzzyInt("alex", 0)
   bobette := concolicTypes.MakeFuzzyInt("bobette", 1)
 
   balances[alex] = 10
   balances[bobette] = 10
 
-  balances = concolicTypes.MakeFuzzyMapIntInt("balances", balances)
   zoobars := concolicTypes.MakeFuzzyInt("zoobars", 10)
 
   sum := balances[alex] + balances[bobette]
 
   transfer(balances, alex, bobette, zoobars)
-  // transfer(alex, bobette, zoobars)
 
   if balances[alex] + balances[bobette] != sum {
     fmt.Println("oh no")
-  } else {
+  }
 
-  }  
+  g()
 }
 
-/*
-package main
-
-import "concolicTypes"
-import "fmt"
-
-func main() {
+func g() {
 	x := concolicTypes.MakeFuzzyInt("x", 6)
 	y := concolicTypes.MakeFuzzyBool("y", true)
 
 	z := f(x, y)
 	a := map[int]int{}
 	a[0] = 1
-	// h := func() int {
-	// 	// symStack.PushArg(j.Z3Expr)
-	// 	// symStack.PushArg(i.Z3Expr)
-	// 	// symStack.SetArgsPushed()
-	// 	return rubberducky(i, j)
-	// }()
 
 	fmt.Printf("bruh %v\r\n", z)
 }
 
-func f(x int, y int) bool {
-	z := x + y
+func f(x int, y bool) bool {
+	z := x
+  if y {
+    z = -1 * z
+  }
 	if z > 0 {
 		fmt.Println("hi")
 		return true
@@ -78,6 +67,4 @@ func f(x int, y int) bool {
 		fmt.Println("I'm tired --chris")
 		return false
 	}
-
 }
-*/

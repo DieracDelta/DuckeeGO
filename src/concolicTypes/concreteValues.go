@@ -1,5 +1,7 @@
 package concolicTypes
 
+import "fmt"
+
 type ConcreteValues struct {
 	intVals    map[string]int
 	boolVals   map[string]bool
@@ -108,4 +110,34 @@ func (cv *ConcreteValues) inherit(other *ConcreteValues) {
 			cv.stringVals[keyOther] = valOther
 		}
 	}
+}
+
+func (cv *ConcreteValues) printValues() {
+  fmt.Println("[")
+  for key, value := range cv.intVals {
+    fmt.Printf("%v -> %v,\n", key, value)
+  }
+  for key, value := range cv.boolVals {
+    fmt.Printf("%v -> %v,\n", key, value)
+/*
+    if value {
+      fmt.Println("%v -> true,\n", key)
+    } else {
+      fmt.Println(" -> false,")
+    }
+    */
+  }
+  for key, value := range cv.stringVals {
+    fmt.Printf("%v -> %v,\n", key, value)
+  }
+  for key, value := range cv.mapVals {
+    str := "["
+    for k1, v1 := range value {
+      str += fmt.Sprintf("( %v -> %v ),", k1, v1)
+    }
+    str += "]"
+    fmt.Printf("%v -> %v,\n", key, str)
+  }
+  fmt.Println("]")
+  fmt.Println("")
 }

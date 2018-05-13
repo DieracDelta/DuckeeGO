@@ -1,6 +1,5 @@
 package main
 
-// import "golang.org/x/tools/go/ast/astutil"
 import "go/ast"
 
 type ConfigData struct {

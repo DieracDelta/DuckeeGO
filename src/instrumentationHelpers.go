@@ -2,12 +2,9 @@ package main
 
 import (
 	_ "fmt"
-	// for rewriting
 	"go/ast"
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
-	// "strings"
-	// "reflect"
 )
 
 var typeMapping map[string]string
@@ -76,7 +73,7 @@ func instrumentBasicLitPre(curNode *astutil.Cursor) {
 			}
 		curNode.Replace(&augNode)
 	} else if castedNode.Kind == token.STRING {
-		// TODO
+		// because of z3 we don't really support strings so shouldn't need to incldue anything here
 	}
 }
 
@@ -167,67 +164,14 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 	newCastedType := &ast.FuncType{
 		Func:    token.NoPos,
 		Results: castedType.Results,
-		/*
-			Results: &ast.FieldList{
-				List: []*ast.Field{},
-			},
-		*/
 		Params: &ast.FieldList{
 			List: []*ast.Field{},
 		},
 	}
 
-	// TOOD OUTPUT PARAMS
-	/*
-		  if castedType.Results != nil && castedType.Results.List != nil {
-				for _, aParam := range castedType.Results.List {
-					// supposed to look like
-					// i = makeConcolicIntVar(cv, "i")
-					switch aParam.Type.(*ast.Ident).Name {
-					case "concolicTypes.ConcolicString":
-						// newCastedType.Results.List = append([]&ast.Field{&ast.Ident{Name: "string"}}, newCastedType.Results...)
-						newCastedType.Results.List =
-							append(
-								[]*ast.Field{
-									&ast.Field{
-										Type: &ast.Ident{Name: "string"},
-										// 		Type: "string",
-									},
-								},
-								newCastedType.Results.List...)
-					case "concolicTypes.ConcolicInt":
-						// newCastedType.Results.List = append([]ast.Field{&ast.Ident{Name: "int"}}, newCastedType.Results...)
-						// aParam.Type = &ast.Ident{Name: "int"}
-						newCastedType.Results.List =
-							append(
-								[]*ast.Field{
-									&ast.Field{
-										Type: &ast.Ident{Name: "int"},
-									},
-								},
-								newCastedType.Results.List...)
-					case "concolicTypes.ConcolicBool":
-						newCastedType.Results.List =
-							append(
-								[]*ast.Field{
-									&ast.Field{
-										Type: &ast.Ident{Name: "bool"},
-									},
-								},
-								newCastedType.Results.List...)
-					default:
-						// fmt.("WE DON'T SUPPORT THIS TYPE!")
-						// if the type is wrong, it's all wrong, so move onto next parameter
-						break
-
-					}
-				}
-			}
-	*/
 	for index1, aParam := range castedType.Params.List {
 		aParam = castedType.Params.List[len(castedType.Params.List)-1-index1]
 		newParam := &ast.Field{
-			// Type:  aParam.Type,
 			Names: []*ast.Ident{},
 		}
 		for index2, aName := range aParam.Names {
@@ -239,9 +183,7 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 			switch aParam.Type.(type) {
 			case *ast.Ident:
 				switch aParam.Type.(*ast.Ident).Name {
-				// case "string":
-				// 	fallthrough
-				// TODO does this support string correctly
+				// TODO this doesn't quite this support string correctly; but z3 doesn't either
 				case "int":
 					z3DataType = "Int"
 					goDataType = "int"
@@ -253,7 +195,7 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 				default:
 					canInstrument = false
 					// fmt.("WE DON'T SUPPORT THIS TYPE!")
-					// if the type is wrong, it's all wrong, so move onto next parameter
+					// if the type is wrong, move onto next parameter
 					break
 
 				}
@@ -283,13 +225,9 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 				newParam.Names = append(newParam.Names, &ast.Ident{Name: aName.Name})
 			}
 
-			// I CHANGED THIS
-			// aParam.Type = &ast.Ident{Name: strings.ToLower(methodPiece)}
-
 			newParam.Type = &ast.Ident{Name: goDataType}
 			newCastedType.Params.List = append([]*ast.Field{newParam}, newCastedType.Params.List...)
-			// fmt.Print("hidbasdf\r\n")
-			// TODO add in concolic constructors before the _ thingies
+			// add in concolic constructors before the _ thingies
 			// add "_ = y" for example
 			newNode2 := ast.AssignStmt{
 				Lhs: []ast.Expr{
@@ -331,8 +269,6 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 			}
 			castedNode.Body.List = append([]ast.Stmt{&newNode}, castedNode.Body.List...)
 
-			// set each parameter to a different Name
-			// aName.Name = aName.Name + "Val"
 			castedNode.Type = newCastedType
 			curNode.Replace(castedNode)
 		}
@@ -344,11 +280,9 @@ func instrumentFuncDeclPre(curNode *astutil.Cursor) {
 func instrumentBinaryExprPost(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.BinaryExpr)
 
-	// TODO add switch to determine the function you use
 	addedNode := &ast.Ident{
 		Name: "",
 	}
-	// if stuff gets assigned
 
 	switch castedNode.Op {
 	case token.ADD:
@@ -393,7 +327,6 @@ func instrumentBinaryExprPost(curNode *astutil.Cursor) {
 		panic("unsupported operation!!")
 	}
 
-	// depending on what it is, may not need to use int or w/e
 	replacementNode :=
 		ast.CallExpr{
 			Fun: &ast.SelectorExpr{
@@ -407,7 +340,7 @@ func instrumentBinaryExprPost(curNode *astutil.Cursor) {
 }
 
 func instrumentUnaryExprPost(curNode *astutil.Cursor) {
-	// ! on bools is the only case I can think of
+	// !, ^, and - are the only unary expressions we support
 	castedNode := curNode.Node().(*ast.UnaryExpr)
 	switch castedNode.Op {
 	case token.SUB:
@@ -427,14 +360,6 @@ func instrumentUnaryExprPost(curNode *astutil.Cursor) {
 			castedChild.Args[0].(*ast.BasicLit).Value = "-" + castedNode.X.(*ast.CallExpr).Args[0].(*ast.BasicLit).Value
 
 		}
-		// replacemenetNode := ast.CallExpr{
-		// 	Fun: &ast.SelectorExpr{
-		// 		X: castedNode.X,
-		// 		Sel: &ast.Ident{
-		// 			Name: "ConcIntMul(concolicTypes.MakeConcIntConst(-1))",
-		// 		},
-		// 	},
-		// }
 		curNode.Replace(castedNode.X)
 	case token.NOT:
 		replacemenetNode := ast.CallExpr{
@@ -460,11 +385,11 @@ func instrumentUnaryExprPost(curNode *astutil.Cursor) {
 }
 
 func instrumentBasicLitPost(curNode *astutil.Cursor) {
-
+	// for the sake of completeness
 }
 
 func instrumentCompositeLitPost(curNode *astutil.Cursor) {
-
+	// for the sake of completeness
 }
 
 func instrumentAssignStmtPost(curNode *astutil.Cursor) {
@@ -497,7 +422,6 @@ func instrumentAssignStmtPost(curNode *astutil.Cursor) {
 	case token.AND_NOT_ASSIGN:
 		addedNode.Name = "ConcBoolAndNot"
 	default:
-		// TODO iterate through all
 		switch castedNode.Lhs[0].(type) {
 		case *ast.IndexExpr:
 			lhs := castedNode.Lhs[0].(*ast.IndexExpr)
@@ -505,7 +429,6 @@ func instrumentAssignStmtPost(curNode *astutil.Cursor) {
 			case *ast.Ident:
 				lhsName := lhs.X.(*ast.Ident).Name
 				if res, ok := typeMapping[lhsName]; ok && res == concolicMapTypeString {
-					// newNode := &ast.Ident{Name: "hi"}
 					newNode := &ast.AssignStmt{
 						Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
 						Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: lhsName + ".ConcMapPut"}, Args: []ast.Expr{lhs.Index, castedNode.Rhs[0]}}},
@@ -522,7 +445,6 @@ func instrumentAssignStmtPost(curNode *astutil.Cursor) {
 				case *ast.Ident:
 					rhsName := rhs.X.(*ast.Ident).Name
 					if res, ok := typeMapping[rhsName]; ok && res == concolicMapTypeString {
-						// newNode := &ast.Ident{Name: "hi"}
 						newNode := &ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
 							Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: rhsName + ".ConcMapGet"}, Args: []ast.Expr{rhs.Index}}},
 							Tok: token.ASSIGN,
@@ -532,47 +454,8 @@ func instrumentAssignStmtPost(curNode *astutil.Cursor) {
 				}
 			}
 		default:
-			/*
-				switch castedNode.Rhs[0].(type) {
-				case *ast.CallExpr:
-					switch castedNode.Rhs[0].(*ast.CallExpr).Fun.(type) {
-					case *ast.FuncLit:
-						blah := castedNode.Rhs[0].(*ast.CallExpr).Fun.(*ast.FuncLit).Type.Results.List[0].Type.(*ast.Ident)
-						switch blah.Name {
-						case "concolicTypes.ConcolicString":
-							blah.Name = "string"
-						case "concolicTypes.ConcolicInt":
-							blah.Name = "int"
-						case "concolicTypes.ConcolicBool":
-							blah.Name = "bool"
-						default:
-							// fmt.("WE DON'T SUPPORT THIS TYPE!")
-							// if the type is wrong, it's all wrong, so move onto next parameter
-							break
-
-						}
-						curNode.Replace(castedNode)
-					case *ast.Ident:
-					default:
-					}
-				case *ast.IndexExpr:
-
-				case *ast.FuncLit:
-				case *ast.CompositeLit:
-				default:
-				}*/
 		}
 	}
-
-	/*
-		replacementNode :=
-			ast.AssignStmt{
-				Tok: curNode.Node().(*ast.AssignStmt).Tok,
-				Lhs: castedNode.Lhs,
-				Rhs: castedNode.Rhs,
-			}
-		curNode.Replace(&replacementNode)
-	*/
 }
 
 func instrumentIncDecStmtPost(curNode *astutil.Cursor) {
@@ -616,11 +499,6 @@ func instrumentIncDecStmtPost(curNode *astutil.Cursor) {
 }
 
 func instrumentIdentPost(curNode *astutil.Cursor) {
-	// switch curNode.Parent().(type) {
-	// case *ast.FuncDecl:
-	// default:
-
-	// TODO bad idea?
 	if _, ok := curNode.Parent().(*ast.Field); !ok {
 		castedNode := curNode.Node().(*ast.Ident)
 		var varOrConst, concType string
@@ -677,7 +555,7 @@ func instrumentIfStmtPost(curNode *astutil.Cursor) {
 	}
 	castedNode.Body.List = append(
 		[]ast.Stmt{
-			// TODO it might be better to SHA shit here tbh
+			// TODO it might be better to SHA this
 			&ast.ExprStmt{
 				X: &ast.CallExpr{
 					Fun: &ast.SelectorExpr{
@@ -689,10 +567,6 @@ func instrumentIfStmtPost(curNode *astutil.Cursor) {
 						},
 					},
 					Args: []ast.Expr{
-						// &ast.BasicLit{
-						// 	Kind:  token.STRING,
-						// 	Value: "currPathConstrs",
-						// },
 						&ast.SelectorExpr{
 							X: cond,
 							Sel: &ast.Ident{
@@ -760,12 +634,12 @@ func instrumentIfStmtPost(curNode *astutil.Cursor) {
 }
 
 func instrumentFuncDeclPost(curNode *astutil.Cursor) {
+	// here for completeness sake
 }
 
 func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 	castedNode := curNode.Node().(*ast.CallExpr)
 	switch castedNode.Fun.(type) {
-	// case *ast.SelectorExpr:
 	case *ast.Ident:
 		if castedNode.Fun == nil || castedNode.Fun.(*ast.Ident).Obj == nil || castedNode.Fun.(*ast.Ident).Obj.Decl == nil {
 			break
@@ -827,7 +701,6 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 
 				Fun: &ast.FuncLit{
 					Type: &ast.FuncType{
-						// Results: objectifiedNode,
 						Results: newFiledList,
 					},
 					Body: &ast.BlockStmt{
@@ -836,7 +709,7 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 								Lhs: []ast.Expr{&ast.Ident{Name: daName + "Val"}},
 								Tok: token.DEFINE,
 								Rhs: []ast.Expr{castedNode},
-								// TODO := or = and actualy make it right with right type
+								// TODO := or = and make the type for clearly defined make it right with right type
 							},
 							&ast.DeclStmt{
 								Decl: &ast.GenDecl{
@@ -876,23 +749,12 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 			},
 			},
 			newNode.Fun.(*ast.FuncLit).Body.List...)
-		// switching order of args
-		// newNode.Fun.(*ast.FuncLit).Body.List,
-		// &ast.ExprStmt{
-		// 	X: &ast.CallExpr{
-		// 		Fun: &ast.Ident{Name: "symStack.SetArgsPushed"},
-		// 	},
-		// },
-		// )
 
 		if objectified != nil {
 			declaration := castedNode.Fun.(*ast.Ident).Obj.Decl.(*ast.FuncDecl)
-			// name := declaration.Name.Name
 			paramList := declaration.Type.Params.List
 
 			for index, aParam := range paramList {
-				// TODO value
-				// fmt.Print("%v\r\n", aParam.Type.(*ast.Ident).Name)
 				containedInMap := false
 				if _, ok := typeMapping[castedNode.Args[index].(*ast.Ident).Name]; ok {
 					containedInMap = true
@@ -915,8 +777,6 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 									},
 								},
 							}, newNode.Fun.(*ast.FuncLit).Body.List...)
-						// aNameNode.Name += "Val"
-						// aNameNode.Obj = nil
 					}
 					castedNode.Args[index] = &ast.SelectorExpr{
 						X: castedNode.Args[index],
@@ -926,24 +786,6 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 					}
 				}
 			}
-
-			// TODO was in here at one point
-			// for i, aParam := range newNode.Fun.(*ast.FuncLit).Type.Results.List {
-			// 	// supposed to look like
-			// 	// i = makeConcolicIntVar(cv, "i")
-			// 	switch aParam.Type.(*ast.Ident).Name {
-			// 	case "string":
-			// 		newNode.Fun.(*ast.FuncLit).Type.Results.List[i].Type = &ast.Ident{Name: "concolicTypes.ConcolicString"}
-			// 		newNode.Fun.(*ast.FuncLit).Type.Results.List[i].Type = &ast.Ident{Name: "concolicTypes.ConcolicString"}
-			// 	case "int":
-			// 		newNode.Fun.(*ast.FuncLit).Type.Results.List[i].Type = &ast.Ident{Name: "concolicTypes.ConcolicInt", NamePos: token.NoPos}
-
-			// 	case "bool":
-			// 		newNode.Fun.(*ast.FuncLit).Type.Results.List[i].Type = &ast.Ident{Name: "concolicTypes.ConcolicBool"}
-			// 	default:
-			// 		// fmt.("WE DON'T SUPPORT THIS TYPE!")
-			// 		// if the type is wrong, it's all wrong, so move onto next parameter
-			// 		break
 
 			daName, releType := getName(&parNode)
 			afterIf := instrumentParentOfCallExpr(curNode, releType)
@@ -958,8 +800,6 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 						&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: daName}}})
 			} else {
 			}
-			// 	}
-			// }
 			if objectifiedNode != nil && objectifiedNode.List != nil {
 				for _, aParam := range objectifiedNode.List {
 					switch aParam.Type.(type) {
@@ -967,21 +807,12 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 						switch aParam.Type.(*ast.Ident).Name {
 						case "concolicTypes.ConcolicString":
 							aParam.Type.(*ast.Ident).Name = "string"
-							// aParam.Type.(*ast.Ident).Obj.Name = "string"
-							// aParam.Type.(*ast.Ident).NamePos = token.NoPos
 						case "concolicTypes.ConcolicInt":
 							aParam.Type.(*ast.Ident).Name = "int"
-							// aParam.Type.(*ast.Ident).Obj.Name = "int"
-							// aParam.Type.(*ast.Ident).NamePos = token.NoPos
 						case "concolicTypes.ConcolicBool":
 							aParam.Type.(*ast.Ident).Name = "bool"
-							// aParam.Type.(*ast.Ident).Obj.Name = "bool"
-							// aParam.Type.(*ast.Ident).NamePos = token.NoPos
-							// aParam.Type.(*ast.Ident).Obj.
 						default:
-							//fmt.Printf(aParam.Type.(*ast.Ident).Name + "\r\n")
-							// fmt.("WE DON'T SUPPORT THIS TYPE!")
-							// if the type is wrong, it's all wrong, so move onto next parameter
+							// if the type is wrong, so move onto next parameter
 
 						}
 
@@ -1000,7 +831,6 @@ func instrumentCallExprPost(curNode *astutil.Cursor) bool {
 				switch castedChild.Sel.Name {
 				case "MakeFuzzyInt":
 					castedChild.Sel.Name = "MakeConcolicIntVar"
-					// castedNode.Fun.(*ast.SelectorExpr).Sel.(*ast.Ident).Name = "MakeConcolicIntVar"
 				case "MakeFuzzyString":
 					castedChild.Sel.Name = "MakeConcolicStringVar"
 				case "MakeFuzzyBool":
@@ -1039,9 +869,6 @@ func instrumentReturnStmtPost(curNode *astutil.Cursor) {
 						Fun: &ast.Ident{
 							Name: "concolicTypes.SymStack.PushReturn",
 						},
-						// TODO add all arguments
-						// TODO enable type checking for return
-						// currently asssuming returns concolic whatever
 						Args: []ast.Expr{
 							&ast.SelectorExpr{
 								X: val,
@@ -1064,7 +891,6 @@ func instrumentReturnStmtPost(curNode *astutil.Cursor) {
 	curNode.Replace(newNode)
 }
 
-// add in a handler here and rename the method
 func instrumentMainMethod(curNode *astutil.Cursor) {
 	castedNode := curNode.Node().(*ast.FuncDecl)
 	castedNode.Recv = &ast.FieldList{
@@ -1095,11 +921,6 @@ func getName(parNode *ast.Node) (string, string) {
 			switch val.(type) {
 			case *ast.Ident:
 				actualName = val.(*ast.Ident).Name
-				// decl := val.(*ast.Ident).Obj.Decl
-				// 				switch decl.(type){
-				// case
-				// 				}
-
 			}
 		}
 		if theRhs, ok1 := castedParentNode.Rhs[0].(*ast.CallExpr); ok1 {
@@ -1146,32 +967,10 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor, rType string) *ast.IfSt
 			switch val.(type) {
 			case *ast.Ident:
 				actualName = val.(*ast.Ident).Name
-				// castedParentNode.Lhs[index] = &ast.Ident{Name: val.(*ast.Ident).Name + "Val"}
 			}
 		}
-		// nextNode := &ast.BlockStmt{
-		// 	List: []ast.Stmt{
-		// 		castedParentNode,
-		// 	},
-		// }
-		// if castedParentNode.Tok == token.DEFINE {
-		// 	declStatement := &ast.DeclStmt{
-		// 		Decl: &ast.GenDecl{
-		// 			Tok: token.VAR,
-		// 			Specs: []ast.Spec{
-		// 				&ast.TypeSpec{
-		// 					Name: &ast.Ident{
-		// 						Name: actualName,
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 	}
-		// 	nextNode.List = append(nextNode.List, declStatement)
-		// }
-		// TODO if  statement
 		ifStmnt := &ast.IfStmt{
-			// TODO this is hax
+			// TODO this is hax; make it cleaner with more selector statemetns
 			Cond: &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
 					X: &ast.Ident{
@@ -1182,7 +981,6 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor, rType string) *ast.IfSt
 					},
 				},
 			},
-			// TODO types "make concolic int string OR BOOL "
 			Body: &ast.BlockStmt{
 				List: []ast.Stmt{
 					&ast.AssignStmt{
@@ -1249,7 +1047,6 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor, rType string) *ast.IfSt
 													Name: "z3",
 												},
 												Sel: &ast.Ident{
-													// TODO types
 													Name: releType,
 												},
 											},
@@ -1263,30 +1060,6 @@ func instrumentParentOfCallExpr(curNode *astutil.Cursor, rType string) *ast.IfSt
 			},
 		}
 		return ifStmnt
-		// nextNode.List = append(nextNode.List, ifStmnt)
-		// curNode.InsertAfter(ifStmnt)
-		// TOOD gotta put this somewhere boi
-
-		// queueOfThings.stage1.Push(curNode.Parent().GetId().Id, nextNode)
-
-		// pre := func(curNode *astutil.Cursor) bool {
-		// 	return true
-		// }
-
-		// bruh := true
-		// castedParentNode. = nextNode
-
-		// post := func(cn *astutil.Cursor) bool {
-		// 	if cn.Node() == parentNode {
-		// 		// doesn't traverse childrens so we gucci
-		// 		// TODO . replace
-		// 		cn.Replace(nextNode)
-		// 		bruh = false
-		// 	}
-		// 	return true
-		// }
-		// astutil.Apply(parentNode, nil, astutil.ApplyFunc(post))
-		// TODO
 	default:
 		return nil
 	}
@@ -1314,7 +1087,7 @@ func whichSideAmIOn(curNode *astutil.Cursor) int {
 	castedCurNode.Lbrack = 6969696969696969
 	curNode.Replace(castedCurNode)
 	rVal := 2
-	// lhs look through
+	// explore lhs
 	for _, theExpr := range castedParNode.Lhs {
 		if ca, ok := theExpr.(*ast.IndexExpr); ok {
 			if ca.Lbrack == 6969696969696969 {
@@ -1323,7 +1096,7 @@ func whichSideAmIOn(curNode *astutil.Cursor) int {
 			}
 		}
 	}
-	// rhs look through
+	// explore rhs
 	for _, theExpr := range castedParNode.Rhs {
 		if ca, ok := theExpr.(*ast.IndexExpr); ok {
 			if ca.Lbrack == 6969696969696969 {
@@ -1349,8 +1122,6 @@ func instrumentIndexExprPre(curNode *astutil.Cursor) {
 				Fun: &ast.SelectorExpr{
 					X:   castedNode.X,
 					Sel: &ast.Ident{Name: "ConcMapGet"},
-					// X:   castedNode.,
-					// Sel: ,
 				},
 				Args: []ast.Expr{
 					castedNode.Index,

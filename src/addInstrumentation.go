@@ -1,14 +1,9 @@
 package main
 
 import (
-	// for rewriting
-	// "fmt"
 	"go/ast"
 	"golang.org/x/tools/go/ast/astutil"
-	// "reflect"
 )
-
-// var nodeNumber = 0
 
 func addInstrumentationPre(curNode *astutil.Cursor) bool {
 	if _, ok := curNode.Node().(ast.Decl); ok {
@@ -51,7 +46,6 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 		instrumentAssignStmtPost(curNode)
 	case *ast.IncDecStmt:
 		instrumentIncDecStmtPost(curNode)
-	// case *ast.BlockStmt:
 	case *ast.Ident:
 		instrumentIdentPost(curNode)
 	case *ast.IfStmt:
@@ -63,7 +57,7 @@ func addInstrumentationPost(curNode *astutil.Cursor) bool {
 	case *ast.ReturnStmt:
 		instrumentReturnStmtPost(curNode)
 	default:
-		// TODO do nothing
+		// do nothing
 	}
 	return true
 }

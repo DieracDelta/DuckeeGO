@@ -20,6 +20,9 @@ func MakeConcolicMapConst(value map[int]int) ConcolicMap {
 	return ConcolicMap{Value: value, Z3Expr: zarr}
 }
 
+func MakeConcolicMap(value map[int]int, sym z3.Array) ConcolicMap {
+	return ConcolicMap{Value: value, Z3Expr: sym}
+}
 
 func (self ConcolicMap) ConcMapGet(key ConcolicInt) ConcolicInt {
   res := self.Value[key.Value]

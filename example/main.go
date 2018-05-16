@@ -1,6 +1,6 @@
 package main
 
-import "fmt"
+// import "fmt"
 import "concolicTypes"
 
 // person id -> balance
@@ -50,7 +50,11 @@ func g() {
 
 	z := f(x, y)
 	a := map[int]int{}
-	a[0] = 1
+	if z {
+		a[0] = 1
+	} else {
+		a[0] = 5
+	}
 
 	// fmt.Printf("bruh %v\r\n", z)
 }

@@ -12,7 +12,7 @@ func transfer(balances map[int]int, sender int, recipient int, zoobars int) {
 
 	if sender_balance < 0 || recipient_balance < 0 {
 		// WHAT HAPPENS ???? :O
-		fmt.Println("we failedddddd")
+		//fmt.Println("we failedddddd")
 	}
 
 	balances[sender] = sender_balance
@@ -38,7 +38,7 @@ func main() {
 	transfer(balances, alex, bobette, zoobars)
 
 	if balances[alex]+balances[bobette] != sum {
-		fmt.Println("oh no")
+		// fmt.Println("oh no")
 	}
 
 	g()
@@ -52,7 +52,7 @@ func g() {
 	a := map[int]int{}
 	a[0] = 1
 
-	fmt.Printf("bruh %v\r\n", z)
+	// fmt.Printf("bruh %v\r\n", z)
 }
 
 func f(x int, y bool) bool {
@@ -62,10 +62,10 @@ func f(x int, y bool) bool {
 		z = -15 * z
 	}
 	if z > 0 {
-		fmt.Println("hi")
+		// fmt.Println("hi")
 		return true
 	} else {
-		fmt.Println("I'm tired --chris")
+		//fmt.Println("I'm tired --chris")
 		return false
 	}
 }
